@@ -1397,10 +1397,16 @@
             console.log('📁 Lade Datei:', file.name, 'Größe:', file.size, 'bytes');
 
             const reader = new FileReader();
+            
+            reader.onerror = function() {
+                alert('❌ Fehler beim Lesen der Datei!');
+            };
+            
             reader.onload = function(e) {
                 try {
                     const data = JSON.parse(e.target.result);
-                    debugDataStructure(data, 'Datei: ' + file.name);
+                    console.log('📦 Datei geladen, validiere...');
+                    console.log('📊 Daten-Keys:', Object.keys(data || {}));
                     
                     // VALIDIERUNG: Ist das eine Tricks-Datenbank oder ein Backup?
                     if (data.version && data.learnedTricks !== undefined) {
@@ -1418,6 +1424,7 @@
                     }
                     
                     console.log('✅ Gültige Tricks-Datenbank gefunden');
+                    console.log('📊 Kategorien:', Object.keys(data.trick_database));
                     currentData = data;
                     localStorage.setItem(FULL_DATA_KEY, JSON.stringify(data));
                     mergeCustomTricks();
@@ -1446,14 +1453,21 @@
             console.log('🔗 Lade von URL:', url);
 
             try {
-                const response = await fetch(url);
+                const response = await fetch(url, {
+                    method: 'GET',
+                    mode: 'cors',
+                    cache: 'no-cache',
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
                 
                 if (!response.ok) {
                     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
                 }
                 
                 const data = await response.json();
-                debugDataStructure(data, 'URL: ' + url);
+                console.log('📦 Daten empfangen, validiere...');
                 
                 // VALIDIERUNG: Ist das eine Tricks-Datenbank oder ein Backup?
                 if (data.version && data.learnedTricks !== undefined) {
@@ -1468,6 +1482,7 @@
                 }
                 
                 console.log('✅ Gültige Tricks-Datenbank von URL geladen');
+                console.log('📊 Kategorien:', Object.keys(data.trick_database));
                 currentData = data;
                 localStorage.setItem(FULL_DATA_KEY, JSON.stringify(data));
                 localStorage.setItem(JSON_URL_KEY, url);
@@ -1672,14 +1687,22 @@
             const url = 'https://raw.githubusercontent.com/Digid0t/DigiDot_9/main/Hundetricks.json';
             
             try {
-                console.log('Lade JSON von:', url);
-                const response = await fetch(url);
+                console.log('🔄 Lade JSON von:', url);
+                const response = await fetch(url, {
+                    method: 'GET',
+                    mode: 'cors',
+                    cache: 'no-cache',
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
                 
                 if (!response.ok) {
                     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
                 }
                 
                 const data = await response.json();
+                console.log('📦 JSON empfangen, validiere Struktur...');
                 
                 // VALIDIERUNG: Prüfe ob es eine gültige Tricks-Datenbank ist
                 if (!data.trick_database) {
@@ -1687,6 +1710,7 @@
                 }
                 
                 console.log('✅ JSON erfolgreich geladen und validiert');
+                console.log('📊 Kategorien gefunden:', Object.keys(data.trick_database));
                 
                 currentData = data;
                 localStorage.setItem(FULL_DATA_KEY, JSON.stringify(data));
@@ -1695,7 +1719,7 @@
                 renderApp(currentData);
                 
             } catch(error) {
-                console.error('Fehler beim Laden:', error);
+                console.error('❌ Fehler beim Laden:', error);
                 // Fehler weiterreichen, damit window.onload auf cached Daten zurückfallen kann
                 throw error;
             }
@@ -1710,19 +1734,23 @@
                     <div style="background:var(--card-bg); padding:24px; border-radius:12px; margin:20px auto; max-width:500px; text-align:left; border: 2px solid #667eea;">
                         <h3 style="margin:0 0 20px 0; font-size:1.1rem; color:#667eea;">📥 So laden Sie die Tricks:</h3>
                         
-                        <div style="margin-bottom:20px;">
-                            <p style="margin:0 0 8px 0; font-weight:600;">Schritt 1: JSON herunterladen</p>
+                        <div style="margin-bottom:20px; padding:16px; background:var(--bg-main); border-radius:8px;">
+                            <p style="margin:0 0 8px 0; font-weight:600;">Methode 1: Download & Upload (Empfohlen)</p>
                             <a href="https://raw.githubusercontent.com/Digid0t/DigiDot_9/main/Hundetricks.json" 
                                download="Hundetricks.json" 
                                style="display:inline-block; background:var(--gradient-success); color:white; padding:12px 24px; border-radius:8px; text-decoration:none; margin-top:8px; font-weight:600;">
                                 📥 Hundetricks.json herunterladen
                             </a>
+                            <p style="margin:8px 0 0 0; font-size:0.85rem; color:var(--text-secondary);">
+                                Nach dem Download: Klicken Sie oben auf <strong>⚙️ Einstellungen</strong> → <strong>"📁 Datei vom Gerät laden"</strong> und wählen Sie die heruntergeladene Datei aus.
+                            </p>
                         </div>
                         
-                        <div>
-                            <p style="margin:0 0 8px 0; font-weight:600;">Schritt 2: In App laden</p>
-                            <p style="margin:0; font-size:0.9rem; color:var(--text-secondary);">
-                                Klicken Sie oben auf <strong>⚙️ Einstellungen</strong> → <strong>"📁 Datei vom Gerät laden"</strong> → Wählen Sie die heruntergeladene Datei
+                        <div style="padding:16px; background:var(--bg-main); border-radius:8px;">
+                            <p style="margin:0 0 8px 0; font-weight:600;">Methode 2: Direktes Laden von URL</p>
+                            <p style="margin:0; font-size:0.85rem; color:var(--text-secondary);">
+                                Öffnen Sie <strong>⚙️ Einstellungen</strong> → <strong>"🔗 JSON von URL laden"</strong><br>
+                                Die korrekte URL ist bereits vorausgefüllt.
                             </p>
                         </div>
                     </div>
