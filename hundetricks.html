@@ -1038,15 +1038,31 @@
                     <label class="setting-label">📥 JSON laden</label>
                     <p class="setting-description">Lade Tricks aus einer JSON-Datei oder per URL</p>
                     
+                    <div style="background:#fff3cd; border-left:4px solid #f57c00; padding:12px; border-radius:8px; margin-bottom:16px;">
+                        <p style="margin:0; color:#856404; font-size:0.9rem; line-height:1.5;"><strong>💡 Firefox-Nutzer:</strong> Falls das Laden von URL nicht funktioniert, laden Sie die Datei bitte direkt vom Gerät (empfohlen)!</p>
+                    </div>
+                    
                     <div class="file-input-wrapper">
-                        <label class="btn btn-secondary btn-full">
-                            📁 Datei vom Gerät laden
+                        <label class="btn btn-success btn-full" style="margin-bottom:16px;">
+                            📁 Datei vom Gerät laden (Empfohlen)
                             <input type="file" accept=".json" onchange="loadJSONFile(event)">
                         </label>
                     </div>
                     
+                    <div style="text-align:center; margin:16px 0;">
+                        <span style="color:var(--text-secondary); font-size:0.9rem;">oder</span>
+                    </div>
+                    
+                    <a href="https://raw.githubusercontent.com/Digid0t/DigiDot_9/main/Hundetricks.json" 
+                       download="Hundetricks.json" 
+                       class="btn btn-secondary btn-full" 
+                       style="margin-bottom:16px; text-decoration:none; display:flex;">
+                        💾 JSON-Datei herunterladen
+                    </a>
+                    
                     <div class="divider"></div>
                     
+                    <p style="margin:12px 0; color:var(--text-secondary); font-size:0.9rem;">Von URL laden (kann Probleme in Firefox haben):</p>
                     <input type="text" class="input-field" id="jsonUrl" 
                            placeholder="https://example.com/tricks.json" 
                            value="https://raw.githubusercontent.com/Digid0t/DigiDot_9/main/Hundetricks.json">
@@ -1617,8 +1633,7 @@
             const fallbackUrls = [
                 localStorage.getItem(JSON_URL_KEY),
                 'https://raw.githubusercontent.com/Digid0t/DigiDot_9/main/Hundetricks.json',
-                'https://cdn.jsdelivr.net/gh/Digid0t/DigiDot_9@main/Hundetricks.json',
-                'https://raw.githack.com/Digid0t/DigiDot_9/main/Hundetricks.json'
+                'https://cdn.jsdelivr.net/gh/Digid0t/DigiDot_9@main/Hundetricks.json'
             ].filter(url => url); // Entferne null/undefined
             
             let lastError = null;
@@ -1629,9 +1644,11 @@
                 
                 try {
                     const response = await fetch(url, {
+                        method: 'GET',
+                        mode: 'cors',
                         cache: 'no-cache',
                         headers: {
-                            'Accept': 'application/json'
+                            'Accept': 'application/json',
                         }
                     });
                     
@@ -1651,7 +1668,8 @@
                 } catch(err) {
                     console.warn(`Fehler beim Laden von ${url}:`, err.message);
                     lastError = err;
-                    // Versuche nächste URL
+                    // Kurze Pause vor nächstem Versuch
+                    await new Promise(resolve => setTimeout(resolve, 100));
                 }
             }
             
@@ -1662,29 +1680,28 @@
             errorMessage += '<div style="font-size:3rem; margin-bottom:20px;">⚠️</div>';
             errorMessage += '<h2 style="margin:0 0 20px 0; font-size:1.5rem; color:#e53e3e;">Ladefehler</h2>';
             
-            errorMessage += '<div style="background:var(--card-bg); padding:24px; border-radius:12px; margin:20px auto; max-width:500px; text-align:left; border: 2px solid var(--border-color);">';
-            errorMessage += '<h3 style="margin:0 0 15px 0; font-size:1.1rem; color:var(--text-primary);">📥 Empfohlene Lösungen:</h3>';
+            errorMessage += '<div style="background:var(--card-bg); padding:24px; border-radius:12px; margin:20px auto; max-width:500px; text-align:left; border: 2px solid #667eea;">';
+            errorMessage += '<h3 style="margin:0 0 15px 0; font-size:1.2rem; color:#667eea;">🎯 SCHNELLE LÖSUNG:</h3>';
             
-            errorMessage += '<div style="margin-bottom:20px;">';
-            errorMessage += '<p style="margin:0 0 10px 0; font-weight:600; color:var(--text-primary);">1️⃣ Datei vom Gerät laden (Empfohlen)</p>';
-            errorMessage += '<p style="margin:0 0 10px 0; color:var(--text-secondary); font-size:0.9rem;">Klicken Sie oben auf <strong>⚙️ Einstellungen</strong> → <strong>"📁 Datei vom Gerät laden"</strong></p>';
+            errorMessage += '<div style="margin-bottom:24px; background:var(--gradient-success); padding:16px; border-radius:8px;">';
+            errorMessage += '<p style="margin:0 0 12px 0; font-weight:700; color:white; font-size:1.05rem;">1. JSON herunterladen:</p>';
+            errorMessage += '<a href="https://raw.githubusercontent.com/Digid0t/DigiDot_9/main/Hundetricks.json" download="Hundetricks.json" style="display:block; background:white; color:#11998e; padding:12px 20px; border-radius:8px; text-decoration:none; font-weight:600; text-align:center; margin-bottom:8px;">📥 Hundetricks.json herunterladen</a>';
+            errorMessage += '<p style="margin:0; color:white; font-size:0.85rem; opacity:0.9;">Klicken Sie auf den Button oben ↑</p>';
             errorMessage += '</div>';
             
-            errorMessage += '<div style="margin-bottom:20px;">';
-            errorMessage += '<p style="margin:0 0 10px 0; font-weight:600; color:var(--text-primary);">2️⃣ JSON herunterladen</p>';
-            errorMessage += '<p style="margin:0 0 10px 0; color:var(--text-secondary); font-size:0.9rem;">Laden Sie die Datei direkt von GitHub:</p>';
-            errorMessage += '<a href="https://github.com/Digid0t/DigiDot_9" target="_blank" style="display:inline-block; background:var(--gradient-primary); color:white; padding:10px 20px; border-radius:8px; text-decoration:none; margin-top:8px;">📂 Zum GitHub Repository</a>';
+            errorMessage += '<div style="margin-bottom:20px; padding:16px; background:var(--bg-main); border-radius:8px; border-left:4px solid #667eea;">';
+            errorMessage += '<p style="margin:0 0 8px 0; font-weight:700; color:var(--text-primary);">2. In App laden:</p>';
+            errorMessage += '<p style="margin:0; color:var(--text-secondary); font-size:0.9rem; line-height:1.6;">Klicken Sie oben rechts auf <strong>⚙️ Einstellungen</strong> → <strong>"📁 Datei vom Gerät laden"</strong> → Wählen Sie die heruntergeladene Datei</p>';
             errorMessage += '</div>';
             
-            errorMessage += '<div>';
-            errorMessage += '<p style="margin:0 0 10px 0; font-weight:600; color:var(--text-primary);">3️⃣ Internetverbindung prüfen</p>';
-            errorMessage += '<p style="margin:0; color:var(--text-secondary); font-size:0.9rem;">Stellen Sie sicher, dass Sie mit dem Internet verbunden sind.</p>';
+            errorMessage += '<div style="text-align:center;">';
+            errorMessage += '<a href="https://github.com/Digid0t/DigiDot_9" target="_blank" style="display:inline-block; background:var(--gradient-primary); color:white; padding:12px 24px; border-radius:8px; text-decoration:none; margin-top:8px; font-weight:600;">📂 Zum GitHub Repository</a>';
             errorMessage += '</div>';
             errorMessage += '</div>';
             
-            if (lastError) {
-                errorMessage += '<div style="background:var(--bg-main); padding:16px; border-radius:8px; margin:20px auto; max-width:500px; font-size:0.85rem; color:var(--text-secondary); border-left: 4px solid #e53e3e;">';
-                errorMessage += '<strong>Fehlerdetails:</strong><br>' + lastError.message;
+            if (lastError && lastError.message) {
+                errorMessage += '<div style="background:#2d1f1f; padding:12px; border-radius:8px; margin:16px auto; max-width:500px; font-size:0.8rem; color:#fca5a5; border-left: 4px solid #e53e3e; font-family:monospace;">';
+                errorMessage += '<strong>Fehlerdetails:</strong> ' + lastError.message;
                 errorMessage += '</div>';
             }
             
