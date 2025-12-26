@@ -1394,19 +1394,40 @@
             const file = event.target.files[0];
             if (!file) return;
 
+            console.log('📁 Lade Datei:', file.name, 'Größe:', file.size, 'bytes');
+
             const reader = new FileReader();
             reader.onload = function(e) {
                 try {
                     const data = JSON.parse(e.target.result);
+                    debugDataStructure(data, 'Datei: ' + file.name);
+                    
+                    // VALIDIERUNG: Ist das eine Tricks-Datenbank oder ein Backup?
+                    if (data.version && data.learnedTricks !== undefined) {
+                        // Das ist ein BACKUP-Format, nicht die Tricks-Datenbank!
+                        alert('❌ Dies ist eine Backup-Datei!\n\nBitte verwenden Sie stattdessen:\n"📤 Gespeicherte Daten laden" weiter unten in den Einstellungen.');
+                        event.target.value = '';
+                        return;
+                    }
+                    
+                    // Validierung: Prüfe ob es eine gültige Tricks-Datenbank ist
+                    if (!data.trick_database) {
+                        alert('❌ Ungültige Tricks-Datei!\n\nDie Datei muss eine "trick_database" enthalten.\n\nLaden Sie die richtige Datei von:\nhttps://github.com/Digid0t/DigiDot_9');
+                        event.target.value = '';
+                        return;
+                    }
+                    
+                    console.log('✅ Gültige Tricks-Datenbank gefunden');
                     currentData = data;
                     localStorage.setItem(FULL_DATA_KEY, JSON.stringify(data));
                     mergeCustomTricks();
                     renderApp(currentData);
                     alert('✅ JSON-Datei erfolgreich geladen!');
                     closeSettings();
+                    
                 } catch (error) {
                     console.error('JSON parse error:', error);
-                    alert('❌ Fehler beim Laden der JSON-Datei: ' + error.message);
+                    alert('❌ Fehler beim Laden der JSON-Datei:\n\n' + error.message + '\n\nBitte stellen Sie sicher, dass die Datei eine gültige JSON-Datei ist.');
                 }
             };
             reader.readAsText(file);
@@ -1422,6 +1443,8 @@
                 return;
             }
 
+            console.log('🔗 Lade von URL:', url);
+
             try {
                 const response = await fetch(url);
                 
@@ -1430,6 +1453,21 @@
                 }
                 
                 const data = await response.json();
+                debugDataStructure(data, 'URL: ' + url);
+                
+                // VALIDIERUNG: Ist das eine Tricks-Datenbank oder ein Backup?
+                if (data.version && data.learnedTricks !== undefined) {
+                    alert('❌ Dies ist eine Backup-Datei, nicht die Tricks-Datenbank!\n\nBitte verwenden Sie die URL zur Hundetricks.json Datei.');
+                    return;
+                }
+                
+                // Validierung: Prüfe ob es eine gültige Tricks-Datenbank ist
+                if (!data.trick_database) {
+                    alert('❌ Ungültige URL!\n\nDie Datei muss eine "trick_database" enthalten.\n\nKorrekte URL:\nhttps://raw.githubusercontent.com/Digid0t/DigiDot_9/main/Hundetricks.json');
+                    return;
+                }
+                
+                console.log('✅ Gültige Tricks-Datenbank von URL geladen');
                 currentData = data;
                 localStorage.setItem(FULL_DATA_KEY, JSON.stringify(data));
                 localStorage.setItem(JSON_URL_KEY, url);
@@ -1642,7 +1680,13 @@
                 }
                 
                 const data = await response.json();
-                console.log('✅ JSON erfolgreich geladen');
+                
+                // VALIDIERUNG: Prüfe ob es eine gültige Tricks-Datenbank ist
+                if (!data.trick_database) {
+                    throw new Error('Ungültige Datenstruktur: "trick_database" fehlt');
+                }
+                
+                console.log('✅ JSON erfolgreich geladen und validiert');
                 
                 currentData = data;
                 localStorage.setItem(FULL_DATA_KEY, JSON.stringify(data));
@@ -1706,19 +1750,46 @@
             const container = document.getElementById('tricksContainer');
             container.innerHTML = '';
 
+            // VALIDIERUNG: Prüfe ob gültige Daten vorhanden sind
+            if (!data || !data.trick_database) {
+                console.error('Ungültige Daten in renderApp:', data);
+                container.innerHTML = `
+                    <div style="text-align:center; padding:40px 20px; color:var(--text-primary);">
+                        <div style="font-size:3rem; margin-bottom:20px;">⚠️</div>
+                        <h2 style="margin:0 0 20px 0; font-size:1.5rem; color:#e53e3e;">Ungültige Daten</h2>
+                        <p style="margin:20px 0; color:var(--text-secondary);">Die geladenen Daten haben nicht das erwartete Format.</p>
+                        <p style="margin:20px 0;">Bitte laden Sie die Tricks-Datenbank über ⚙️ Einstellungen.</p>
+                    </div>
+                `;
+                return;
+            }
+
             // Die JSON-Struktur hat ein trick_database Objekt mit Kategorien
-            const trickDatabase = data.trick_database || {};
+            const trickDatabase = data.trick_database;
             
             // Konvertiere das Objekt in ein Array für einfachere Verarbeitung
             const categories = [];
             for (const [key, categoryData] of Object.entries(trickDatabase)) {
-                if (categoryData.list) {
+                if (categoryData && categoryData.list) {
                     categories.push({
                         key: key,
-                        meta: categoryData.meta,
+                        meta: categoryData.meta || {},
                         list: categoryData.list
                     });
                 }
+            }
+            
+            // Prüfe ob überhaupt Kategorien vorhanden sind
+            if (categories.length === 0) {
+                console.warn('Keine gültigen Kategorien gefunden');
+                container.innerHTML = `
+                    <div style="text-align:center; padding:40px 20px; color:var(--text-primary);">
+                        <div style="font-size:3rem; margin-bottom:20px;">📦</div>
+                        <h2 style="margin:0 0 20px 0; font-size:1.5rem;">Keine Tricks gefunden</h2>
+                        <p style="margin:20px 0; color:var(--text-secondary);">Die Datenbank enthält keine Trick-Kategorien.</p>
+                    </div>
+                `;
+                return;
             }
 
             // Zähle Total
@@ -1975,6 +2046,24 @@
             // z.B. "Anfänger (Green)" -> "Anfänger"
             if (!name) return name;
             return name.replace(/\s*\([^)]*\)\s*$/, '').trim();
+        }
+
+        function debugDataStructure(data, source) {
+            console.log(`=== DEBUG: ${source} ===`);
+            console.log('Data object keys:', Object.keys(data || {}));
+            console.log('Has trick_database:', !!data?.trick_database);
+            console.log('Has version (backup format):', !!data?.version);
+            console.log('Has learnedTricks (backup format):', !!data?.learnedTricks);
+            
+            if (data?.trick_database) {
+                const categories = Object.keys(data.trick_database);
+                console.log('Categories:', categories);
+                categories.forEach(cat => {
+                    const count = data.trick_database[cat]?.list?.length || 0;
+                    console.log(`  - ${cat}: ${count} tricks`);
+                });
+            }
+            console.log('=================');
         }
 
         function saveStorage() {
