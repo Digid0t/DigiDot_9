@@ -1,0 +1,1555 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hunde Trick-Datenbank</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --gradient-success: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            --gradient-warning: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            --bg-main: #f8f9fd;
+            --text-primary: #2d3748;
+            --text-secondary: #718096;
+            --card-bg: #ffffff;
+            --shadow-sm: 0 2px 8px rgba(0,0,0,0.04);
+            --shadow-md: 0 4px 16px rgba(0,0,0,0.08);
+            --shadow-lg: 0 10px 30px rgba(0,0,0,0.12);
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 16px;
+        }
+
+        * { 
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        html {
+            overflow-y: scroll;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        body {
+            font-family: 'Poppins', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-main);
+            color: var(--text-primary);
+            margin: 0;
+            padding: 0;
+            line-height: 1.6;
+            padding-bottom: 400px;
+        }
+
+        /* === STICKY HEADER === */
+        .app-header {
+            background: var(--card-bg);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: var(--shadow-md);
+            backdrop-filter: blur(10px);
+        }
+
+        .header-content {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .title-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        h1 { 
+            margin: 0; 
+            font-size: 1.75rem; 
+            font-weight: 700;
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header-buttons {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .icon-btn {
+            background: linear-gradient(135deg, #667eea15, #764ba215);
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 1.2rem;
+            transition: all 0.3s ease;
+        }
+
+        .icon-btn:hover {
+            background: linear-gradient(135deg, #667eea25, #764ba225);
+            transform: scale(1.1);
+        }
+
+        /* === MODAL === */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.7);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal-overlay.show {
+            display: flex;
+        }
+
+        .modal {
+            background: var(--card-bg);
+            border-radius: var(--radius-lg);
+            max-width: 600px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: var(--shadow-lg);
+            animation: modalSlideIn 0.3s ease;
+        }
+
+        @keyframes modalSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .modal-header {
+            padding: 24px;
+            border-bottom: 2px solid #f1f3f9;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin: 0;
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .modal-close:hover {
+            background: #f1f3f9;
+        }
+
+        .modal-body {
+            padding: 24px;
+        }
+
+        .setting-group {
+            margin-bottom: 32px;
+        }
+
+        .setting-label {
+            font-weight: 600;
+            font-size: 1rem;
+            margin-bottom: 12px;
+            display: block;
+            color: var(--text-primary);
+        }
+
+        .setting-description {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border-radius: var(--radius-md);
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: var(--gradient-primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .btn-secondary {
+            background: #f1f3f9;
+            color: var(--text-primary);
+        }
+
+        .btn-secondary:hover {
+            background: #e2e8f0;
+        }
+
+        .btn-success {
+            background: var(--gradient-success);
+            color: white;
+        }
+
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .btn-full {
+            width: 100%;
+            justify-content: center;
+        }
+
+        .input-field {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: var(--radius-md);
+            font-family: inherit;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            margin-bottom: 12px;
+        }
+
+        .input-field:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+        }
+
+        .textarea-field {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+            width: 100%;
+        }
+
+        .file-input-wrapper input[type=file] {
+            position: absolute;
+            left: -9999px;
+        }
+
+        .divider {
+            height: 1px;
+            background: #e2e8f0;
+            margin: 24px 0;
+        }
+
+        .stats-badge {
+            background: linear-gradient(135deg, #667eea20, #764ba220);
+            padding: 8px 16px;
+            border-radius: 50px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #667eea;
+        }
+
+        /* === SEARCH === */
+        .search-box {
+            position: relative;
+            margin-bottom: 16px;
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 1.2rem;
+            color: var(--text-secondary);
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 14px 16px 14px 48px;
+            border-radius: var(--radius-lg);
+            border: 2px solid transparent;
+            background: #f1f3f9;
+            font-size: 1rem;
+            font-family: inherit;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        .search-input:focus {
+            background: var(--card-bg);
+            border-color: #667eea;
+            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+        }
+
+        /* === PROGRESS === */
+        .progress-section {
+            background: linear-gradient(135deg, #667eea15, #764ba215);
+            padding: 16px;
+            border-radius: var(--radius-lg);
+            margin-bottom: 8px;
+        }
+
+        .progress-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .progress-track {
+            background: rgba(255,255,255,0.5);
+            height: 8px;
+            border-radius: 50px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--gradient-success);
+            width: 0%;
+            transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 50px;
+            box-shadow: 0 2px 8px rgba(56, 239, 125, 0.3);
+        }
+
+        /* === CONTENT AREA === */
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            padding-bottom: 300px;
+        }
+
+        /* === CATEGORIES === */
+        .category-wrapper {
+            margin-bottom: 24px;
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            background: var(--card-bg);
+            box-shadow: var(--shadow-sm);
+            transition: all 0.3s ease;
+        }
+
+        .category-wrapper:hover {
+            box-shadow: var(--shadow-md);
+            transform: translateY(-2px);
+        }
+
+        .cat-header {
+            padding: 20px;
+            font-weight: 600;
+            font-size: 1.1rem;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: linear-gradient(135deg, #f8f9fd, #ffffff);
+            user-select: none;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .cat-header::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 5px;
+            background: var(--category-color, linear-gradient(135deg, #667eea, #764ba2));
+            transition: width 0.3s ease;
+        }
+
+        .cat-header:hover::before {
+            width: 8px;
+        }
+        
+        .category-wrapper {
+            --category-color: #667eea;
+        }
+
+        .cat-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .cat-count {
+            padding: 4px 12px;
+            border-radius: 50px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .arrow { 
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            font-size: 1.2rem;
+        }
+
+        .cat-header.active .arrow { 
+            transform: rotate(180deg);
+        }
+
+        .cat-body {
+            display: none;
+            background: #fafbfc;
+        }
+
+        .cat-body.open { 
+            display: block;
+        }
+
+        /* === TRICK CARD === */
+        .trick-card {
+            background: var(--card-bg);
+            margin: 16px;
+            border-radius: var(--radius-md);
+            padding: 24px;
+            position: relative;
+            transition: all 0.3s ease;
+            border: 1px solid #e8eaf0;
+        }
+
+        .trick-card:hover {
+            box-shadow: var(--shadow-md);
+            border-color: #667eea30;
+        }
+
+        .trick-card.learned {
+            opacity: 0.65;
+            background: linear-gradient(135deg, #f8f9fd, #ffffff);
+        }
+
+        .trick-card.learned .trick-title { 
+            text-decoration: line-through; 
+            color: var(--text-secondary);
+        }
+
+        .trick-card.hidden {
+            display: none;
+        }
+
+        .custom-badge {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            z-index: 10;
+        }
+
+        .delete-custom-btn {
+            background: rgba(255, 255, 255, 0.3);
+            border: none;
+            cursor: pointer;
+            font-size: 0.85rem;
+            padding: 2px 6px;
+            border-radius: 4px;
+            transition: all 0.2s;
+            line-height: 1;
+        }
+
+        .delete-custom-btn:hover {
+            background: rgba(255, 255, 255, 0.5);
+        }
+
+        .card-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 20px;
+            padding-bottom: 16px;
+            border-bottom: 2px solid #f1f3f9;
+        }
+
+        .trick-title { 
+            margin: 0; 
+            font-size: 1.35rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            line-height: 1.4;
+        }
+
+        .trick-id { 
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #667eea;
+            background: linear-gradient(135deg, #667eea15, #764ba215);
+            padding: 6px 12px;
+            border-radius: 50px;
+            white-space: nowrap;
+        }
+
+        /* === INFO BLOCKS === */
+        .info-block {
+            margin-bottom: 20px;
+        }
+
+        .block-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .block-icon {
+            font-size: 1.3rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 28px;
+            height: 28px;
+            background: linear-gradient(135deg, #f8f9fd, #ffffff);
+            border-radius: 8px;
+        }
+
+        .text-short {
+            font-size: 1rem;
+            color: var(--text-primary);
+            line-height: 1.7;
+            font-weight: 400;
+        }
+
+        .text-long {
+            display: none;
+            font-size: 0.95rem;
+            color: var(--text-secondary);
+            background: linear-gradient(135deg, #f8f9fd, #ffffff);
+            padding: 16px;
+            border-radius: var(--radius-md);
+            margin-top: 12px;
+            border-left: 4px solid #667eea;
+            line-height: 1.7;
+            animation: slideDown 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .text-long.show { 
+            display: block;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .toggle-btn {
+            border: 2px solid transparent;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            padding: 8px 16px;
+            margin-top: 8px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            border-radius: 50px;
+            transition: all 0.3s ease;
+            font-family: inherit;
+        }
+
+        .toggle-btn:hover {
+            transform: translateY(-1px);
+            opacity: 0.8;
+        }
+
+        .toggle-btn:active {
+            transform: translateY(0);
+        }
+
+        /* === VARIATIONS === */
+        .variation-container {
+            margin-top: 24px;
+            background: linear-gradient(135deg, #fff8e1, #fff3cd);
+            border-radius: var(--radius-md);
+            padding: 20px;
+            border: 2px solid #ffe082;
+        }
+
+        .variation-title {
+            color: #f57c00;
+            font-weight: 700;
+            font-size: 1.05rem;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* === CHECKBOX/TOGGLE === */
+        .card-footer {
+            margin-top: 24px;
+            padding-top: 20px;
+            border-top: 2px dashed #e8eaf0;
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .check-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            user-select: none;
+            padding: 10px 16px;
+            border-radius: 50px;
+            transition: all 0.3s ease;
+            background: #f8f9fd;
+        }
+
+        .check-wrapper:hover {
+            background: #f1f3f9;
+        }
+
+        .check-label {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            transition: color 0.3s ease;
+        }
+
+        .check-wrapper.active .check-label {
+            color: #11998e;
+        }
+
+        .switch {
+            position: relative;
+            width: 52px;
+            height: 28px;
+            background: #cbd5e0;
+            border-radius: 50px;
+            transition: all 0.3s ease;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .check-wrapper.active .switch {
+            background: var(--gradient-success);
+            box-shadow: 0 2px 8px rgba(56, 239, 125, 0.3);
+        }
+
+        .knob {
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            width: 22px;
+            height: 22px;
+            background: white;
+            border-radius: 50%;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+        }
+
+        .check-wrapper.active .knob {
+            transform: translateX(24px);
+        }
+
+        /* === RESPONSIVE === */
+        @media (max-width: 600px) {
+            h1 { font-size: 1.5rem; }
+            .trick-card { padding: 20px; }
+            .container { padding: 16px; }
+            .header-content { padding: 16px; }
+        }
+
+        /* === UTILITIES === */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-header">
+        <div class="header-content">
+            <div class="title-row">
+                <h1>🐾 Trick Training</h1>
+                <div class="header-buttons">
+                    <span class="stats-badge" id="statsInfo">0 / 0</span>
+                    <button class="icon-btn" onclick="openSettings()" title="Einstellungen">⚙️</button>
+                    <button class="icon-btn" onclick="openAddTrick()" title="Neuer Trick">➕</button>
+                </div>
+            </div>
+
+            <div class="search-box">
+                <span class="search-icon">🔍</span>
+                <input type="text" 
+                       class="search-input" 
+                       placeholder="Trick suchen..." 
+                       id="searchInput"
+                       oninput="handleSearch(event)">
+            </div>
+
+            <div class="progress-section">
+                <div class="progress-label">
+                    <span>Dein Fortschritt</span>
+                    <span id="progressLabel">0% Komplett</span>
+                </div>
+                <div class="progress-track">
+                    <div class="progress-fill" id="progressBar"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container" id="tricksContainer">
+        <!-- Dynamisch befüllt -->
+    </div>
+    
+    <!-- Spacer für vollständiges Scrollen -->
+    <div style="height: 500px; min-height: 500px;"></div>
+
+    <!-- === SETTINGS MODAL === -->
+    <div class="modal-overlay" id="settingsModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 class="modal-title">⚙️ Einstellungen</h2>
+                <button class="modal-close" onclick="closeSettings()">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="setting-group">
+                    <label class="setting-label">📥 JSON laden</label>
+                    <p class="setting-description">Lade Tricks aus einer JSON-Datei oder per URL</p>
+                    
+                    <div class="file-input-wrapper">
+                        <label class="btn btn-secondary btn-full">
+                            📁 Datei vom Gerät laden
+                            <input type="file" accept=".json" onchange="loadJSONFile(event)">
+                        </label>
+                    </div>
+                    
+                    <div class="divider"></div>
+                    
+                    <input type="text" class="input-field" id="jsonUrl" 
+                           placeholder="https://example.com/tricks.json" 
+                           value="https://raw.githack.com/Geistesblitz4Erfurt/hundetricks/main/Hundetricks.json">
+                    <button class="btn btn-secondary btn-full" onclick="loadJSONFromURL()">
+                        🔗 Von URL laden
+                    </button>
+                </div>
+
+                <div class="divider"></div>
+
+                <div class="setting-group">
+                    <label class="setting-label">💾 Daten sichern & laden</label>
+                    <p class="setting-description">Speichere deinen kompletten Fortschritt und alle eigenen Tricks</p>
+                    
+                    <button class="btn btn-success btn-full" onclick="exportData()">
+                        💾 Alles auf Gerät speichern
+                    </button>
+                    
+                    <div style="height: 12px;"></div>
+                    
+                    <div class="file-input-wrapper">
+                        <label class="btn btn-primary btn-full">
+                            📤 Gespeicherte Daten laden
+                            <input type="file" accept=".json" onchange="importData(event)">
+                        </label>
+                    </div>
+                </div>
+
+                <div class="divider"></div>
+
+                <div class="setting-group">
+                    <label class="setting-label">🗑️ Daten zurücksetzen</label>
+                    <p class="setting-description">Achtung: Löscht alle eigenen Tricks und den Fortschritt!</p>
+                    <button class="btn btn-secondary btn-full" onclick="resetAllData()">
+                        Alles zurücksetzen
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- === ADD TRICK MODAL === -->
+    <div class="modal-overlay" id="addTrickModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 class="modal-title">➕ Neuer Trick</h2>
+                <button class="modal-close" onclick="closeAddTrick()">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="setting-group">
+                    <label class="setting-label">Kategorie</label>
+                    <select class="input-field" id="newTrickCategory">
+                        <option value="beginner">Anfänger (Green)</option>
+                        <option value="intermediate">Fortgeschritten (Yellow)</option>
+                        <option value="advanced">Profi (Red)</option>
+                    </select>
+                </div>
+
+                <div class="setting-group">
+                    <label class="setting-label">Titel des Tricks</label>
+                    <input type="text" class="input-field" id="newTrickTitle" placeholder="z.B. Spin">
+                </div>
+
+                <div class="setting-group">
+                    <label class="setting-label">✋ Handzeichen (kurz)</label>
+                    <input type="text" class="input-field" id="newTrickHandKurz" 
+                           placeholder="Kurzbeschreibung des Handzeichens">
+                    <label class="setting-label">✋ Handzeichen (ausführlich)</label>
+                    <textarea class="input-field textarea-field" id="newTrickHandLang" 
+                              placeholder="Detaillierte Beschreibung des Handzeichens"></textarea>
+                </div>
+
+                <div class="setting-group">
+                    <label class="setting-label">🎬 Bewegungsablauf (kurz)</label>
+                    <input type="text" class="input-field" id="newTrickBewegungKurz" 
+                           placeholder="Kurzbeschreibung der Bewegung">
+                    <label class="setting-label">🎬 Bewegungsablauf (ausführlich)</label>
+                    <textarea class="input-field textarea-field" id="newTrickBewegungLang" 
+                              placeholder="Detaillierte Beschreibung des Bewegungsablaufs"></textarea>
+                </div>
+
+                <div class="setting-group">
+                    <label class="setting-label">📍 Endposition (kurz)</label>
+                    <input type="text" class="input-field" id="newTrickEndposKurz" 
+                           placeholder="Kurzbeschreibung der Endposition">
+                    <label class="setting-label">📍 Endposition (ausführlich)</label>
+                    <textarea class="input-field textarea-field" id="newTrickEndposLang" 
+                              placeholder="Detaillierte Beschreibung der Endposition"></textarea>
+                </div>
+
+                <div class="setting-group">
+                    <label class="setting-label">💡 Trainingstipps (kurz)</label>
+                    <input type="text" class="input-field" id="newTrickTippsKurz" 
+                           placeholder="Kurze Trainingstipps">
+                    <label class="setting-label">💡 Trainingstipps (ausführlich)</label>
+                    <textarea class="input-field textarea-field" id="newTrickTippsLang" 
+                              placeholder="Ausführliche Trainingstipps"></textarea>
+                </div>
+
+                <button class="btn btn-success btn-full" onclick="saveNewTrick()">
+                    ✅ Trick speichern
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const STORAGE_KEY = 'dogTricksLearned';
+        const CUSTOM_TRICKS_KEY = 'dogTricksCustom';
+        const FULL_DATA_KEY = 'dogTricksFullData';
+        const JSON_URL_KEY = 'dogTricksJsonUrl';
+        
+        let learnedTricks = new Set();
+        let totalTricks = 0;
+        let currentData = null;
+        let customTricks = [];
+
+        // === MODAL FUNCTIONS ===
+        function openSettings() {
+            document.getElementById('settingsModal').classList.add('show');
+        }
+
+        function closeSettings() {
+            document.getElementById('settingsModal').classList.remove('show');
+        }
+
+        function openAddTrick() {
+            document.getElementById('addTrickModal').classList.add('show');
+        }
+
+        function closeAddTrick() {
+            document.getElementById('addTrickModal').classList.remove('show');
+            clearAddTrickForm();
+        }
+
+        function clearAddTrickForm() {
+            document.getElementById('newTrickTitle').value = '';
+            document.getElementById('newTrickHandKurz').value = '';
+            document.getElementById('newTrickHandLang').value = '';
+            document.getElementById('newTrickBewegungKurz').value = '';
+            document.getElementById('newTrickBewegungLang').value = '';
+            document.getElementById('newTrickEndposKurz').value = '';
+            document.getElementById('newTrickEndposLang').value = '';
+            document.getElementById('newTrickTippsKurz').value = '';
+            document.getElementById('newTrickTippsLang').value = '';
+        }
+
+        // === DATA EXPORT/IMPORT ===
+        function exportData() {
+            const exportObj = {
+                version: '1.0',
+                exportDate: new Date().toISOString(),
+                learnedTricks: Array.from(learnedTricks),
+                customTricks: customTricks,
+                baseData: currentData
+            };
+
+            const dataStr = JSON.stringify(exportObj, null, 2);
+            const dataBlob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `hundetricks_backup_${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+
+            alert('✅ Backup erfolgreich heruntergeladen!');
+        }
+
+        function importData(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const importObj = JSON.parse(e.target.result);
+                    
+                    // Validierung
+                    if (!importObj.version) {
+                        alert('❌ Ungültiges Backup-Format!');
+                        return;
+                    }
+
+                    // Daten wiederherstellen
+                    if (importObj.learnedTricks) {
+                        learnedTricks = new Set(importObj.learnedTricks);
+                        localStorage.setItem(STORAGE_KEY, JSON.stringify(Array.from(learnedTricks)));
+                    }
+
+                    if (importObj.customTricks) {
+                        customTricks = importObj.customTricks;
+                        localStorage.setItem(CUSTOM_TRICKS_KEY, JSON.stringify(customTricks));
+                    }
+
+                    if (importObj.baseData) {
+                        currentData = importObj.baseData;
+                        localStorage.setItem(FULL_DATA_KEY, JSON.stringify(currentData));
+                    }
+
+                    alert('✅ Backup erfolgreich wiederhergestellt!');
+                    closeSettings();
+                    renderApp(currentData);
+                    updateUI();
+
+                } catch (error) {
+                    console.error('Import error:', error);
+                    alert('❌ Fehler beim Laden der Backup-Datei: ' + error.message);
+                }
+            };
+            reader.readAsText(file);
+            event.target.value = '';
+        }
+
+        // === JSON LOADING ===
+        function loadJSONFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    currentData = data;
+                    localStorage.setItem(FULL_DATA_KEY, JSON.stringify(data));
+                    renderApp(data);
+                    alert('✅ JSON-Datei erfolgreich geladen!');
+                    closeSettings();
+                } catch (error) {
+                    console.error('JSON parse error:', error);
+                    alert('❌ Fehler beim Laden der JSON-Datei: ' + error.message);
+                }
+            };
+            reader.readAsText(file);
+            event.target.value = '';
+        }
+
+        async function loadJSONFromURL() {
+            const urlInput = document.getElementById('jsonUrl');
+            const url = urlInput.value.trim();
+            
+            if (!url) {
+                alert('❌ Bitte eine URL eingeben!');
+                return;
+            }
+
+            try {
+                const response = await fetch(url);
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                
+                const data = await response.json();
+                currentData = data;
+                localStorage.setItem(FULL_DATA_KEY, JSON.stringify(data));
+                localStorage.setItem(JSON_URL_KEY, url);
+                
+                renderApp(data);
+                alert('✅ JSON von URL erfolgreich geladen!');
+                closeSettings();
+            } catch (error) {
+                console.error('URL load error:', error);
+                alert('❌ Fehler beim Laden von URL:\n\n' + error.message + 
+                      '\n\nBitte prüfen Sie:\n- Ist die URL korrekt?\n- Haben Sie Internet?\n- Erlaubt die Seite CORS?');
+            }
+        }
+
+        // === CUSTOM TRICK CREATION ===
+        function saveNewTrick() {
+            const category = document.getElementById('newTrickCategory').value;
+            const title = document.getElementById('newTrickTitle').value.trim();
+            
+            if (!title) {
+                alert('❌ Bitte einen Titel eingeben!');
+                return;
+            }
+
+            const newTrick = {
+                id: 'custom_' + Date.now(),
+                position: '0.0',
+                kategorie: category === 'beginner' ? 'Anfänger' : 
+                          category === 'intermediate' ? 'Fortgeschritten' : 'Profi',
+                titel: title,
+                handzeichen: document.getElementById('newTrickHandLang').value.trim() || 
+                            document.getElementById('newTrickHandKurz').value.trim() || '',
+                handzeichen_kurz: document.getElementById('newTrickHandKurz').value.trim() || '',
+                bewegungsablauf: document.getElementById('newTrickBewegungLang').value.trim() || 
+                                document.getElementById('newTrickBewegungKurz').value.trim() || '',
+                bewegungsablauf_kurz: document.getElementById('newTrickBewegungKurz').value.trim() || '',
+                endposition: document.getElementById('newTrickEndposLang').value.trim() || 
+                            document.getElementById('newTrickEndposKurz').value.trim() || '',
+                endposition_kurz: document.getElementById('newTrickEndposKurz').value.trim() || '',
+                trainingstipps: document.getElementById('newTrickTippsLang').value.trim() || 
+                               document.getElementById('newTrickTippsKurz').value.trim() || '',
+                trainingstipps_kurz: document.getElementById('newTrickTippsKurz').value.trim() || '',
+                steigerung: {
+                    variante_1: '',
+                    variante_2: '',
+                    variante_3: '',
+                    variante_1_kurz: '',
+                    variante_2_kurz: '',
+                    variante_3_kurz: ''
+                },
+                isCustom: true
+            };
+
+            customTricks.push(newTrick);
+            localStorage.setItem(CUSTOM_TRICKS_KEY, JSON.stringify(customTricks));
+
+            // Trick zur aktuellen Ansicht hinzufügen
+            if (currentData && currentData.trick_database && currentData.trick_database[category]) {
+                currentData.trick_database[category].list.unshift(newTrick);
+            }
+
+            alert('✅ Trick erfolgreich erstellt und gespeichert!');
+            closeAddTrick();
+            renderApp(currentData);
+        }
+
+        function deleteCustomTrick(trickId, event) {
+            event.stopPropagation();
+            
+            if (!confirm('🗑️ Diesen eigenen Trick wirklich löschen?')) {
+                return;
+            }
+
+            // Aus customTricks Array entfernen
+            customTricks = customTricks.filter(t => t.id !== trickId);
+            localStorage.setItem(CUSTOM_TRICKS_KEY, JSON.stringify(customTricks));
+
+            // Aus currentData entfernen
+            if (currentData && currentData.trick_database) {
+                Object.keys(currentData.trick_database).forEach(catKey => {
+                    if (currentData.trick_database[catKey].list) {
+                        currentData.trick_database[catKey].list = 
+                            currentData.trick_database[catKey].list.filter(t => t.id !== trickId);
+                    }
+                });
+            }
+
+            // Aus learnedTricks entfernen falls vorhanden
+            if (learnedTricks.has(trickId)) {
+                learnedTricks.delete(trickId);
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(Array.from(learnedTricks)));
+            }
+
+            alert('✅ Trick wurde gelöscht!');
+            renderApp(currentData);
+        }
+
+        // === RESET ===
+        function resetAllData() {
+            if (!confirm('⚠️ ACHTUNG!\n\nDies löscht:\n- Alle eigenen Tricks\n- Den gesamten Fortschritt\n- Alle gespeicherten Daten\n\nWirklich fortfahren?')) {
+                return;
+            }
+
+            if (!confirm('🚨 LETZTE WARNUNG!\n\nAlle Daten werden unwiderruflich gelöscht!\n\nJetzt wirklich zurücksetzen?')) {
+                return;
+            }
+
+            localStorage.removeItem(STORAGE_KEY);
+            localStorage.removeItem(CUSTOM_TRICKS_KEY);
+            localStorage.removeItem(FULL_DATA_KEY);
+            
+            learnedTricks = new Set();
+            customTricks = [];
+            
+            alert('✅ Alle Daten wurden zurückgesetzt!');
+            closeSettings();
+            
+            // Neu laden von URL falls vorhanden
+            const savedUrl = localStorage.getItem(JSON_URL_KEY);
+            if (savedUrl) {
+                document.getElementById('jsonUrl').value = savedUrl;
+                loadJSONFromURL();
+            } else {
+                location.reload();
+            }
+        }
+
+        // App-Start
+        window.onload = function() {
+            loadStorage();
+            loadCustomTricks();
+            
+            // Erst gespeicherte Daten versuchen zu laden
+            const savedData = localStorage.getItem(FULL_DATA_KEY);
+            const savedUrl = localStorage.getItem(JSON_URL_KEY);
+            
+            if (savedData) {
+                try {
+                    currentData = JSON.parse(savedData);
+                    mergeCustomTricks();
+                    renderApp(currentData);
+                } catch (error) {
+                    console.error('Error loading saved data:', error);
+                    loadJSON();
+                }
+            } else {
+                if (savedUrl) {
+                    document.getElementById('jsonUrl').value = savedUrl;
+                }
+                loadJSON();
+            }
+        };
+
+        function loadCustomTricks() {
+            const saved = localStorage.getItem(CUSTOM_TRICKS_KEY);
+            if (saved) {
+                try {
+                    customTricks = JSON.parse(saved);
+                } catch (error) {
+                    console.error('Error loading custom tricks:', error);
+                    customTricks = [];
+                }
+            }
+        }
+
+        function mergeCustomTricks() {
+            if (!currentData || !currentData.trick_database || customTricks.length === 0) return;
+
+            customTricks.forEach(trick => {
+                const category = trick.kategorie === 'Anfänger' ? 'beginner' :
+                                trick.kategorie === 'Fortgeschritten' ? 'intermediate' : 'advanced';
+                
+                if (currentData.trick_database[category]) {
+                    // Prüfen ob Trick bereits existiert
+                    const exists = currentData.trick_database[category].list.some(t => t.id === trick.id);
+                    if (!exists) {
+                        currentData.trick_database[category].list.unshift(trick);
+                    }
+                }
+            });
+        }
+
+        async function loadJSON() {
+            // Zuerst versuchen URL aus Settings zu laden
+            const savedUrl = localStorage.getItem(JSON_URL_KEY) || 
+                           'https://raw.githack.com/Geistesblitz4Erfurt/hundetricks/main/Hundetricks.json';
+            
+            try {
+                const response = await fetch(savedUrl);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                console.log('Daten erfolgreich geladen:', data);
+                
+                currentData = data;
+                localStorage.setItem(FULL_DATA_KEY, JSON.stringify(data));
+                
+                mergeCustomTricks();
+                renderApp(currentData);
+            } catch(err) {
+                console.error("Fehler beim Laden der JSON:", err);
+                
+                let errorMessage = '<div style="text-align:center; padding:30px 20px; color:#e53e3e;">';
+                errorMessage += '<div style="font-size:3rem; margin-bottom:20px;">⚠️</div>';
+                errorMessage += '<h2 style="margin:0 0 20px 0; font-size:1.5rem;">Ladefehler</h2>';
+                
+                if (err.name === 'TypeError' && err.message.includes('Failed to fetch')) {
+                    errorMessage += '<div style="background:#fff3cd; color:#856404; padding:20px; border-radius:12px; margin:20px auto; max-width:500px; text-align:left;">';
+                    errorMessage += '<h3 style="margin:0 0 15px 0; font-size:1.1rem;">🔒 CORS-Sicherheitssperre</h3>';
+                    errorMessage += '<p style="margin:0 0 15px 0; line-height:1.6;">Die Datei wird direkt vom Dateisystem geöffnet. Browser blockieren externe Requests aus Sicherheitsgründen.</p>';
+                    errorMessage += '<h4 style="margin:15px 0 10px 0; font-size:1rem;">✅ Lösungen:</h4>';
+                    errorMessage += '<ol style="margin:0; padding-left:20px; line-height:1.8;">';
+                    errorMessage += '<li><strong>Eigene JSON laden:</strong> Nutzen Sie ⚙️ Einstellungen → "Datei vom Gerät laden"</li>';
+                    errorMessage += '<li><strong>Online hosten:</strong> Laden Sie die Datei auf einen Webserver (z.B. GitHub Pages, Netlify)</li>';
+                    errorMessage += '<li><strong>Lokaler Server:</strong> Nutzen Sie einen einfachen HTTP-Server (Python: <code style="background:#eee; padding:2px 6px; border-radius:3px;">python -m http.server</code>)</li>';
+                    errorMessage += '</ol>';
+                    errorMessage += '</div>';
+                } else {
+                    errorMessage += '<p style="margin:20px 0;">Fehlerdetails: ' + err.message + '</p>';
+                    errorMessage += '<p>Bitte überprüfen Sie Ihre Internetverbindung oder laden Sie die JSON über ⚙️ Einstellungen.</p>';
+                }
+                
+                errorMessage += '<div style="margin-top:30px; padding:20px; background:#f8f9fd; border-radius:12px; max-width:500px; margin-left:auto; margin-right:auto;">';
+                errorMessage += '<p style="margin:0; font-size:0.9rem; color:#666;">📱 <strong>Tipp:</strong> Laden Sie Ihre eigene JSON-Datei über die Einstellungen!</p>';
+                errorMessage += '</div>';
+                errorMessage += '</div>';
+                
+                document.getElementById('tricksContainer').innerHTML = errorMessage;
+            }
+        }
+
+        function renderApp(data) {
+            const container = document.getElementById('tricksContainer');
+            container.innerHTML = '';
+
+            // Die JSON-Struktur hat ein trick_database Objekt mit Kategorien
+            const trickDatabase = data.trick_database || {};
+            
+            // Konvertiere das Objekt in ein Array für einfachere Verarbeitung
+            const categories = [];
+            for (const [key, categoryData] of Object.entries(trickDatabase)) {
+                if (categoryData.list) {
+                    categories.push({
+                        key: key,
+                        meta: categoryData.meta,
+                        list: categoryData.list
+                    });
+                }
+            }
+
+            // Zähle Total
+            totalTricks = 0;
+            categories.forEach(cat => totalTricks += cat.list.length);
+
+            // Kategorien rendern
+            categories.forEach(cat => {
+                const meta = cat.meta || {};
+                const themeColor = getColor(meta.color_code);
+
+                const wrapper = document.createElement('div');
+                wrapper.className = 'category-wrapper';
+                wrapper.dataset.category = cat.key;
+                wrapper.style.setProperty('--category-color', themeColor);
+
+                const header = document.createElement('div');
+                header.className = 'cat-header active';
+                header.innerHTML = `
+                    <div class="cat-title">
+                        <span>${meta.category_name}</span>
+                        <span class="cat-count" style="background: ${themeColor}20; color: ${themeColor};">${cat.list.length}</span>
+                    </div>
+                    <span class="arrow" style="color: ${themeColor};">▼</span>
+                `;
+                
+                const body = document.createElement('div');
+                body.className = 'cat-body open';
+
+                header.onclick = () => {
+                    body.classList.toggle('open');
+                    header.classList.toggle('active');
+                };
+
+                cat.list.forEach(trick => {
+                    body.appendChild(createTrickCard(trick, themeColor));
+                });
+
+                wrapper.appendChild(header);
+                wrapper.appendChild(body);
+                container.appendChild(wrapper);
+            });
+
+            updateUI();
+        }
+
+        function createTrickCard(trick, color) {
+            const isLearned = learnedTricks.has(trick.id);
+            const card = document.createElement('div');
+            card.className = `trick-card ${isLearned ? 'learned' : ''}`;
+            card.id = `card-${trick.id}`;
+            card.dataset.search = JSON.stringify(trick).toLowerCase();
+
+            let contentHTML = '';
+            
+            // Custom Badge für eigene Tricks
+            if (trick.isCustom) {
+                contentHTML += `
+                    <div class="custom-badge">
+                        ✨ Eigener Trick
+                        <button class="delete-custom-btn" onclick="deleteCustomTrick('${trick.id}', event)" title="Trick löschen">
+                            🗑️
+                        </button>
+                    </div>
+                `;
+            }
+            
+            contentHTML += `
+                <div class="card-top">
+                    <h3 class="trick-title">${trick.titel}</h3>
+                    <span class="trick-id">#${trick.position || trick.id}</span>
+                </div>
+            `;
+
+            contentHTML += createExpandableSection("Handzeichen", "✋", trick.handzeichen_kurz, trick.handzeichen, color);
+            contentHTML += createExpandableSection("Bewegungsablauf", "🎬", trick.bewegungsablauf_kurz, trick.bewegungsablauf, color);
+            contentHTML += createExpandableSection("Endposition", "📍", trick.endposition_kurz, trick.endposition, color);
+            contentHTML += createExpandableSection("Trainingstipps", "💡", trick.trainingstipps_kurz, trick.trainingstipps, color);
+
+            if(trick.steigerung) {
+                let variationsHTML = '';
+                const keys = Object.keys(trick.steigerung).filter(k => k.startsWith('variante_') && !k.endsWith('_kurz'));
+                
+                if(keys.length > 0) {
+                    variationsHTML += `<div class="variation-container">
+                        <div class="variation-title">🚀 Steigerungen</div>`;
+                    
+                    keys.sort();
+                    
+                    keys.forEach(key => {
+                        const shortKey = key + "_kurz";
+                        const num = key.split('_')[1];
+                        const shortText = trick.steigerung[shortKey];
+                        const longText = trick.steigerung[key];
+                        
+                        variationsHTML += createExpandableSection(`Stufe ${num}`, "🔹", shortText, longText, color);
+                    });
+                    
+                    variationsHTML += `</div>`;
+                }
+                contentHTML += variationsHTML;
+            }
+
+            contentHTML += `
+                <div class="card-footer">
+                    <div class="check-wrapper ${isLearned ? 'active' : ''}" onclick="toggleStatus('${trick.id}')">
+                        <span class="check-label" id="lbl-${trick.id}">${isLearned ? 'Gelernt!' : 'Als gelernt markieren'}</span>
+                        <div class="switch"><div class="knob"></div></div>
+                    </div>
+                </div>
+            `;
+
+            card.innerHTML = contentHTML;
+            return card;
+        }
+
+        function createExpandableSection(label, icon, textShort, textLong, color) {
+            // Wenn überhaupt kein Text vorhanden ist, nichts anzeigen
+            if(!textShort && !textLong) return '';
+
+            // Bereinige die Texte
+            const cleanShort = textShort && textShort.trim() ? textShort.trim() : null;
+            const cleanLong = textLong && textLong.trim() ? textLong.trim() : null;
+            
+            // Wenn immer noch nichts da ist, abbrechen
+            if(!cleanShort && !cleanLong) return '';
+            
+            const uid = Math.random().toString(36).substr(2, 9);
+            
+            // Beide Texte vorhanden - zeige Kurztext mit Button für Langtext
+            if(cleanShort && cleanLong) {
+                return `
+                    <div class="info-block">
+                        <div class="block-label">
+                            <span class="block-icon">${icon}</span>
+                            ${label}
+                        </div>
+                        <div class="text-short">${cleanShort}</div>
+                        <div id="long-${uid}" class="text-long">${cleanLong}</div>
+                        <button class="toggle-btn" style="background: ${color}15; border-color: ${color}30; color: ${color};" onclick="toggleText('${uid}', this)">
+                            ▼ Mehr erfahren
+                        </button>
+                    </div>
+                `;
+            }
+            
+            // Nur Langtext vorhanden - zeige vollständig ohne Button
+            if(!cleanShort && cleanLong) {
+                return `
+                    <div class="info-block">
+                        <div class="block-label">
+                            <span class="block-icon">${icon}</span>
+                            ${label}
+                        </div>
+                        <div class="text-short">${cleanLong}</div>
+                    </div>
+                `;
+            }
+            
+            // Nur Kurztext vorhanden - zeige vollständig ohne Button
+            if(cleanShort && !cleanLong) {
+                return `
+                    <div class="info-block">
+                        <div class="block-label">
+                            <span class="block-icon">${icon}</span>
+                            ${label}
+                        </div>
+                        <div class="text-short">${cleanShort}</div>
+                    </div>
+                `;
+            }
+            
+            return '';
+        }
+
+        window.toggleText = function(uid, btn) {
+            const longDiv = document.getElementById(`long-${uid}`);
+            
+            if (longDiv.classList.contains('show')) {
+                longDiv.classList.remove('show');
+                btn.innerHTML = "▼ Mehr erfahren";
+            } else {
+                longDiv.classList.add('show');
+                btn.innerHTML = "▲ Weniger anzeigen";
+            }
+        };
+
+        window.toggleStatus = function(id) {
+            const card = document.getElementById(`card-${id}`);
+            const wrapper = card.querySelector('.check-wrapper');
+            const lbl = document.getElementById(`lbl-${id}`);
+
+            if(learnedTricks.has(id)) {
+                learnedTricks.delete(id);
+                card.classList.remove('learned');
+                wrapper.classList.remove('active');
+                lbl.innerText = "Als gelernt markieren";
+            } else {
+                learnedTricks.add(id);
+                card.classList.add('learned');
+                wrapper.classList.add('active');
+                lbl.innerText = "Gelernt!";
+            }
+            saveStorage();
+            updateUI();
+        }
+
+        function handleSearch(e) {
+            const term = e.target.value.toLowerCase();
+            const cards = document.querySelectorAll('.trick-card');
+            
+            cards.forEach(card => {
+                const text = card.dataset.search;
+                const match = text.includes(term);
+                
+                if(match) {
+                    card.classList.remove('hidden');
+                    if(term.length > 0) {
+                        card.closest('.cat-body').classList.add('open');
+                        card.closest('.category-wrapper').querySelector('.cat-header').classList.add('active');
+                    }
+                } else {
+                    card.classList.add('hidden');
+                }
+            });
+
+            document.querySelectorAll('.category-wrapper').forEach(wrap => {
+                const visibleCards = wrap.querySelectorAll('.trick-card:not(.hidden)').length;
+                wrap.style.display = visibleCards > 0 ? 'block' : 'none';
+            });
+        }
+
+        function updateUI() {
+            const done = learnedTricks.size;
+            const percent = totalTricks > 0 ? Math.round((done/totalTricks)*100) : 0;
+            
+            document.getElementById('progressBar').style.width = percent + '%';
+            document.getElementById('progressLabel').innerText = `${percent}% Komplett`;
+            document.getElementById('statsInfo').innerText = `${done} / ${totalTricks}`;
+        }
+
+        function getColor(code) {
+            const map = {
+                'green': '#11998e',
+                'yellow': '#f57c00',
+                'red': '#e53e3e'
+            };
+            return map[code] || '#667eea';
+        }
+
+        function saveStorage() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify([...learnedTricks]));
+        }
+
+        function loadStorage() {
+            const raw = localStorage.getItem(STORAGE_KEY);
+            if(raw) learnedTricks = new Set(JSON.parse(raw));
+        }
+    </script>
+</body>
+</html>
