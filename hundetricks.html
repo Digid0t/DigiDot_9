@@ -1388,7 +1388,8 @@
                     const data = JSON.parse(e.target.result);
                     currentData = data;
                     localStorage.setItem(FULL_DATA_KEY, JSON.stringify(data));
-                    renderApp(data);
+                    mergeCustomTricks();
+                    renderApp(currentData);
                     alert('✅ JSON-Datei erfolgreich geladen!');
                     closeSettings();
                 } catch (error) {
@@ -1411,20 +1412,34 @@
 
             try {
                 const response = await fetch(url);
-                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                if (!response.ok) {
+                    if (response.status === 429) {
+                        throw new Error('Rate Limit überschritten. Bitte laden Sie die JSON-Datei vom Gerät.');
+                    }
+                    throw new Error(`HTTP ${response.status}`);
+                }
                 
                 const data = await response.json();
                 currentData = data;
                 localStorage.setItem(FULL_DATA_KEY, JSON.stringify(data));
                 localStorage.setItem(JSON_URL_KEY, url);
                 
+                mergeCustomTricks();
                 renderApp(data);
                 alert('✅ JSON von URL erfolgreich geladen!');
                 closeSettings();
             } catch (error) {
                 console.error('URL load error:', error);
-                alert('❌ Fehler beim Laden von URL:\n\n' + error.message + 
-                      '\n\nBitte prüfen Sie:\n- Ist die URL korrekt?\n- Haben Sie Internet?\n- Erlaubt die Seite CORS?');
+                
+                let errorMsg = '❌ Fehler beim Laden von URL:\n\n' + error.message;
+                
+                if (error.message.includes('Rate Limit') || error.message.includes('quota') || error.message.includes('exceeded')) {
+                    errorMsg += '\n\n💡 TIPP: Laden Sie die JSON-Datei direkt vom Gerät über "Datei vom Gerät laden"!';
+                } else {
+                    errorMsg += '\n\nBitte prüfen Sie:\n- Ist die URL korrekt?\n- Haben Sie Internet?\n- Erlaubt die Seite CORS?';
+                }
+                
+                alert(errorMsg);
             }
         }
 
@@ -1624,7 +1639,14 @@
                 errorMessage += '<div style="font-size:3rem; margin-bottom:20px;">⚠️</div>';
                 errorMessage += '<h2 style="margin:0 0 20px 0; font-size:1.5rem;">Ladefehler</h2>';
                 
-                if (err.name === 'TypeError' && err.message.includes('Failed to fetch')) {
+                if (err.message.includes('quota') || err.message.includes('exceeded')) {
+                    errorMessage += '<div style="background:#fff3cd; color:#856404; padding:20px; border-radius:12px; margin:20px auto; max-width:500px; text-align:left;">';
+                    errorMessage += '<h3 style="margin:0 0 15px 0; font-size:1.1rem;">⚠️ Rate Limit erreicht</h3>';
+                    errorMessage += '<p style="margin:0 0 15px 0; line-height:1.6;">Der externe Server hat zu viele Anfragen erhalten.</p>';
+                    errorMessage += '<h4 style="margin:15px 0 10px 0; font-size:1rem;">✅ Lösung:</h4>';
+                    errorMessage += '<p style="margin:0; font-weight:600;">Laden Sie die JSON-Datei direkt über ⚙️ Einstellungen → "Datei vom Gerät laden"</p>';
+                    errorMessage += '</div>';
+                } else if (err.name === 'TypeError' && err.message.includes('Failed to fetch')) {
                     errorMessage += '<div style="background:#fff3cd; color:#856404; padding:20px; border-radius:12px; margin:20px auto; max-width:500px; text-align:left;">';
                     errorMessage += '<h3 style="margin:0 0 15px 0; font-size:1.1rem;">🔒 CORS-Sicherheitssperre</h3>';
                     errorMessage += '<p style="margin:0 0 15px 0; line-height:1.6;">Die Datei wird direkt vom Dateisystem geöffnet. Browser blockieren externe Requests aus Sicherheitsgründen.</p>';
@@ -1640,8 +1662,9 @@
                     errorMessage += '<p>Bitte überprüfen Sie Ihre Internetverbindung oder laden Sie die JSON über ⚙️ Einstellungen.</p>';
                 }
                 
-                errorMessage += '<div style="margin-top:30px; padding:20px; background:#f8f9fd; border-radius:12px; max-width:500px; margin-left:auto; margin-right:auto;">';
-                errorMessage += '<p style="margin:0; font-size:0.9rem; color:#666;">📱 <strong>Tipp:</strong> Laden Sie Ihre eigene JSON-Datei über die Einstellungen!</p>';
+                errorMessage += '<div style="margin-top:30px; padding:20px; background:var(--bg-main); border-radius:12px; max-width:500px; margin-left:auto; margin-right:auto; border: 2px solid #667eea;">';
+                errorMessage += '<h3 style="margin:0 0 10px 0; color:#667eea;">📱 Tipp: Laden Sie Ihre eigene JSON-Datei!</h3>';
+                errorMessage += '<p style="margin:0; font-size:0.9rem; color:var(--text-secondary);">Klicken Sie auf ⚙️ <strong>Einstellungen</strong> und dann auf <strong>"Datei vom Gerät laden"</strong>.</p>';
                 errorMessage += '</div>';
                 errorMessage += '</div>';
                 
