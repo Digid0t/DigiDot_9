@@ -11,15 +11,35 @@
             --gradient-success: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
             --gradient-warning: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
             --bg-main: #f8f9fd;
+            --bg-secondary: #ffffff;
             --text-primary: #2d3748;
             --text-secondary: #718096;
             --card-bg: #ffffff;
+            --border-color: #e2e8f0;
             --shadow-sm: 0 2px 8px rgba(0,0,0,0.04);
             --shadow-md: 0 4px 16px rgba(0,0,0,0.08);
             --shadow-lg: 0 10px 30px rgba(0,0,0,0.12);
             --radius-sm: 8px;
             --radius-md: 12px;
             --radius-lg: 16px;
+            --header-bg: #ffffff;
+            --input-bg: #ffffff;
+            --input-border: #e2e8f0;
+        }
+
+        [data-theme="dark"] {
+            --bg-main: #1a202c;
+            --bg-secondary: #2d3748;
+            --text-primary: #f7fafc;
+            --text-secondary: #cbd5e0;
+            --card-bg: #2d3748;
+            --border-color: #4a5568;
+            --shadow-sm: 0 2px 8px rgba(0,0,0,0.3);
+            --shadow-md: 0 4px 16px rgba(0,0,0,0.4);
+            --shadow-lg: 0 10px 30px rgba(0,0,0,0.5);
+            --header-bg: #2d3748;
+            --input-bg: #1a202c;
+            --input-border: #4a5568;
         }
 
         * { 
@@ -95,9 +115,168 @@
             transition: all 0.3s ease;
         }
 
+        .burger-btn {
+            width: auto;
+            padding: 0 16px;
+            border-radius: var(--radius-lg);
+            gap: 8px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: var(--text-primary);
+        }
+
         .icon-btn:hover {
             background: linear-gradient(135deg, #667eea25, #764ba225);
             transform: scale(1.1);
+        }
+
+        /* === BURGER MENU === */
+        .burger-menu-overlay {
+            position: fixed;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 2500;
+            transition: left 0.3s ease;
+        }
+
+        .burger-menu-overlay.show {
+            left: 0;
+        }
+
+        .burger-menu {
+            position: fixed;
+            top: 0;
+            left: -320px;
+            width: 320px;
+            height: 100%;
+            background: var(--card-bg);
+            box-shadow: var(--shadow-lg);
+            z-index: 2600;
+            transition: left 0.3s ease;
+            overflow-y: auto;
+        }
+
+        .burger-menu.show {
+            left: 0;
+        }
+
+        .burger-header {
+            padding: 20px;
+            background: var(--gradient-primary);
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .burger-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin: 0;
+        }
+
+        .burger-close {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 1.25rem;
+            color: white;
+            transition: all 0.3s ease;
+        }
+
+        .burger-close:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        .burger-content {
+            padding: 20px;
+        }
+
+        .nav-category {
+            margin-bottom: 16px;
+        }
+
+        .nav-category-header {
+            padding: 12px 16px;
+            background: var(--bg-main);
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            color: var(--text-primary);
+            border: 2px solid var(--border-color);
+        }
+
+        .nav-category-header:hover {
+            background: var(--bg-secondary);
+            transform: translateX(4px);
+        }
+
+        .nav-category-header.active {
+            background: var(--bg-secondary);
+        }
+
+        .nav-arrow {
+            font-size: 0.8rem;
+            transition: transform 0.3s ease;
+        }
+
+        .nav-category-header.active .nav-arrow {
+            transform: rotate(180deg);
+        }
+
+        .nav-tricks {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+            padding-left: 12px;
+        }
+
+        .nav-tricks.open {
+            max-height: 2000px;
+            padding-top: 8px;
+        }
+
+        .nav-trick-item {
+            padding: 10px 16px;
+            margin: 4px 0;
+            background: var(--bg-main);
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: var(--text-primary);
+            border-left: 3px solid transparent;
+        }
+
+        .nav-trick-item:hover {
+            background: var(--bg-secondary);
+            border-left-color: var(--category-color);
+            transform: translateX(4px);
+        }
+
+        .nav-trick-title {
+            font-size: 0.9rem;
+        }
+
+        .nav-trick-id {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            opacity: 0.8;
         }
 
         /* === MODAL === */
@@ -250,12 +429,14 @@
         .input-field {
             width: 100%;
             padding: 12px 16px;
-            border: 2px solid #e2e8f0;
+            border: 2px solid var(--input-border);
             border-radius: var(--radius-md);
             font-family: inherit;
             font-size: 1rem;
             transition: all 0.3s ease;
             margin-bottom: 12px;
+            background: var(--input-bg);
+            color: var(--text-primary);
         }
 
         .input-field:focus {
@@ -267,6 +448,17 @@
         .textarea-field {
             min-height: 100px;
             resize: vertical;
+        }
+
+        select.input-field {
+            background: var(--input-bg);
+            color: var(--text-primary);
+            cursor: pointer;
+        }
+
+        select.input-field option {
+            background: var(--card-bg);
+            color: var(--text-primary);
         }
 
         .file-input-wrapper {
@@ -294,6 +486,13 @@
             font-size: 0.85rem;
             font-weight: 600;
             color: #667eea;
+            border: 1px solid #667eea30;
+        }
+
+        [data-theme="dark"] .stats-badge {
+            background: linear-gradient(135deg, #667eea30, #764ba230);
+            border-color: #667eea50;
+            color: #a5b4fc;
         }
 
         /* === SEARCH === */
@@ -316,7 +515,8 @@
             padding: 14px 16px 14px 48px;
             border-radius: var(--radius-lg);
             border: 2px solid transparent;
-            background: #f1f3f9;
+            background: var(--bg-main);
+            color: var(--text-primary);
             font-size: 1rem;
             font-family: inherit;
             outline: none;
@@ -324,9 +524,14 @@
         }
 
         .search-input:focus {
-            background: var(--card-bg);
+            background: var(--input-bg);
             border-color: #667eea;
             box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+        }
+
+        .search-input::placeholder {
+            color: var(--text-secondary);
+            opacity: 0.7;
         }
 
         /* === PROGRESS === */
@@ -347,11 +552,15 @@
         }
 
         .progress-track {
-            background: rgba(255,255,255,0.5);
+            background: var(--border-color);
             height: 8px;
             border-radius: 50px;
             overflow: hidden;
             position: relative;
+        }
+
+        [data-theme="dark"] .progress-track {
+            background: #4a5568;
         }
 
         .progress-fill {
@@ -394,10 +603,12 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            background: linear-gradient(135deg, #f8f9fd, #ffffff);
+            background: var(--card-bg);
             user-select: none;
             position: relative;
             overflow: hidden;
+            border-bottom: 1px solid var(--border-color);
+            color: var(--text-primary);
         }
 
         .cat-header::before {
@@ -443,7 +654,7 @@
 
         .cat-body {
             display: none;
-            background: #fafbfc;
+            background: var(--bg-main);
         }
 
         .cat-body.open { 
@@ -468,7 +679,12 @@
 
         .trick-card.learned {
             opacity: 0.65;
-            background: linear-gradient(135deg, #f8f9fd, #ffffff);
+            background: var(--bg-main);
+        }
+
+        [data-theme="dark"] .trick-card.learned {
+            opacity: 0.5;
+            background: var(--bg-main);
         }
 
         .trick-card.learned .trick-title { 
@@ -538,6 +754,11 @@
             white-space: nowrap;
         }
 
+        [data-theme="dark"] .trick-id {
+            color: #a5b4fc;
+            background: linear-gradient(135deg, #667eea30, #764ba230);
+        }
+
         /* === INFO BLOCKS === */
         .info-block {
             margin-bottom: 20px;
@@ -562,8 +783,9 @@
             justify-content: center;
             width: 28px;
             height: 28px;
-            background: linear-gradient(135deg, #f8f9fd, #ffffff);
+            background: var(--bg-main);
             border-radius: 8px;
+            border: 1px solid var(--border-color);
         }
 
         .text-short {
@@ -577,13 +799,18 @@
             display: none;
             font-size: 0.95rem;
             color: var(--text-secondary);
-            background: linear-gradient(135deg, #f8f9fd, #ffffff);
+            background: var(--bg-main);
             padding: 16px;
             border-radius: var(--radius-md);
             margin-top: 12px;
             border-left: 4px solid #667eea;
             line-height: 1.7;
             animation: slideDown 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid var(--border-color);
+        }
+
+        [data-theme="dark"] .text-long {
+            border-left-color: #a5b4fc;
         }
 
         .text-long.show { 
@@ -634,6 +861,11 @@
             border: 2px solid #ffe082;
         }
 
+        [data-theme="dark"] .variation-container {
+            background: linear-gradient(135deg, #3d3416, #4a3e1a);
+            border-color: #6b5d2a;
+        }
+
         .variation-title {
             color: #f57c00;
             font-weight: 700;
@@ -644,11 +876,15 @@
             gap: 8px;
         }
 
+        [data-theme="dark"] .variation-title {
+            color: #ffa726;
+        }
+
         /* === CHECKBOX/TOGGLE === */
         .card-footer {
             margin-top: 24px;
             padding-top: 20px;
-            border-top: 2px dashed #e8eaf0;
+            border-top: 2px dashed var(--border-color);
             display: flex;
             justify-content: flex-end;
         }
@@ -662,11 +898,12 @@
             padding: 10px 16px;
             border-radius: 50px;
             transition: all 0.3s ease;
-            background: #f8f9fd;
+            background: var(--bg-main);
+            border: 1px solid var(--border-color);
         }
 
         .check-wrapper:hover {
-            background: #f1f3f9;
+            background: var(--bg-secondary);
         }
 
         .check-label {
@@ -684,10 +921,14 @@
             position: relative;
             width: 52px;
             height: 28px;
-            background: #cbd5e0;
+            background: var(--border-color);
             border-radius: 50px;
             transition: all 0.3s ease;
             box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        [data-theme="dark"] .switch {
+            background: #4a5568;
         }
 
         .check-wrapper.active .switch {
@@ -731,9 +972,15 @@
     <div class="app-header">
         <div class="header-content">
             <div class="title-row">
-                <h1>🐾 Trick Training</h1>
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <button class="icon-btn burger-btn" onclick="toggleBurgerMenu()" title="Navigation öffnen">
+                        ☰ Menü
+                    </button>
+                    <h1>🐾 Trick Training</h1>
+                </div>
                 <div class="header-buttons">
                     <span class="stats-badge" id="statsInfo">0 / 0</span>
+                    <button class="icon-btn" onclick="toggleDarkMode()" id="darkModeBtn" title="Dark Mode">🌙</button>
                     <button class="icon-btn" onclick="openSettings()" title="Einstellungen">⚙️</button>
                     <button class="icon-btn" onclick="openAddTrick()" title="Neuer Trick">➕</button>
                 </div>
@@ -757,6 +1004,18 @@
                     <div class="progress-fill" id="progressBar"></div>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <!-- === BURGER MENU === -->
+    <div class="burger-menu-overlay" id="burgerOverlay" onclick="closeBurgerMenu()"></div>
+    <div class="burger-menu" id="burgerMenu">
+        <div class="burger-header">
+            <h3 class="burger-title">📑 Navigation</h3>
+            <button class="burger-close" onclick="closeBurgerMenu()">✕</button>
+        </div>
+        <div class="burger-content" id="burgerContent">
+            <!-- Dynamisch generiert -->
         </div>
     </div>
 
@@ -790,7 +1049,7 @@
                     
                     <input type="text" class="input-field" id="jsonUrl" 
                            placeholder="https://example.com/tricks.json" 
-                           value="https://raw.githack.com/Digid0t/DigiDot_9/main/Hundetricks.json">
+                           value="https://raw.githack.com/Geistesblitz4Erfurt/hundetricks/main/Hundetricks.json">
                     <button class="btn btn-secondary btn-full" onclick="loadJSONFromURL()">
                         🔗 Von URL laden
                     </button>
@@ -899,11 +1158,125 @@
         const CUSTOM_TRICKS_KEY = 'dogTricksCustom';
         const FULL_DATA_KEY = 'dogTricksFullData';
         const JSON_URL_KEY = 'dogTricksJsonUrl';
+        const DARK_MODE_KEY = 'dogTricksDarkMode';
         
         let learnedTricks = new Set();
         let totalTricks = 0;
         let currentData = null;
         let customTricks = [];
+
+        // === DARK MODE ===
+        function toggleDarkMode() {
+            const html = document.documentElement;
+            const btn = document.getElementById('darkModeBtn');
+            
+            if (html.getAttribute('data-theme') === 'dark') {
+                html.removeAttribute('data-theme');
+                btn.textContent = '🌙';
+                localStorage.setItem(DARK_MODE_KEY, 'light');
+            } else {
+                html.setAttribute('data-theme', 'dark');
+                btn.textContent = '☀️';
+                localStorage.setItem(DARK_MODE_KEY, 'dark');
+            }
+        }
+
+        function initDarkMode() {
+            const savedTheme = localStorage.getItem(DARK_MODE_KEY);
+            const btn = document.getElementById('darkModeBtn');
+            
+            if (savedTheme === 'dark') {
+                document.documentElement.setAttribute('data-theme', 'dark');
+                if (btn) btn.textContent = '☀️';
+            }
+        }
+
+        // === BURGER MENU ===
+        function toggleBurgerMenu() {
+            const overlay = document.getElementById('burgerOverlay');
+            const menu = document.getElementById('burgerMenu');
+            
+            overlay.classList.toggle('show');
+            menu.classList.toggle('show');
+        }
+
+        function closeBurgerMenu() {
+            const overlay = document.getElementById('burgerOverlay');
+            const menu = document.getElementById('burgerMenu');
+            
+            overlay.classList.remove('show');
+            menu.classList.remove('show');
+        }
+
+        function generateNavigation(data) {
+            if (!data || !data.trick_database) return;
+
+            const container = document.getElementById('burgerContent');
+            container.innerHTML = '';
+
+            const categories = Object.entries(data.trick_database);
+            
+            categories.forEach(([catKey, cat]) => {
+                const categoryDiv = document.createElement('div');
+                categoryDiv.className = 'nav-category';
+                
+                const color = getColor(cat.meta.color_code);
+                
+                const header = document.createElement('div');
+                header.className = 'nav-category-header';
+                header.style.borderLeftColor = color;
+                header.style.borderLeftWidth = '4px';
+                header.innerHTML = `
+                    <span>${cat.meta.category_name} (${cat.list.length})</span>
+                    <span class="nav-arrow">▼</span>
+                `;
+                
+                const tricksContainer = document.createElement('div');
+                tricksContainer.className = 'nav-tricks';
+                
+                cat.list.forEach(trick => {
+                    const trickItem = document.createElement('div');
+                    trickItem.className = 'nav-trick-item';
+                    trickItem.style.setProperty('--category-color', color);
+                    trickItem.innerHTML = `
+                        <span class="nav-trick-title">${trick.titel}</span>
+                        <span class="nav-trick-id">#${trick.position || trick.id}</span>
+                    `;
+                    
+                    trickItem.onclick = () => {
+                        scrollToTrick(trick.id);
+                        closeBurgerMenu();
+                    };
+                    
+                    tricksContainer.appendChild(trickItem);
+                });
+                
+                header.onclick = () => {
+                    header.classList.toggle('active');
+                    tricksContainer.classList.toggle('open');
+                };
+                
+                categoryDiv.appendChild(header);
+                categoryDiv.appendChild(tricksContainer);
+                container.appendChild(categoryDiv);
+            });
+        }
+
+        function scrollToTrick(trickId) {
+            const card = document.getElementById(`card-${trickId}`);
+            if (card) {
+                card.scrollIntoView({ 
+                    behavior: 'smooth', 
+                    block: 'start'
+                });
+                
+                // Highlight effect
+                card.style.boxShadow = '0 0 0 3px #667eea';
+                setTimeout(() => {
+                    card.style.boxShadow = '';
+                }, 2000);
+            }
+        }
 
         // === MODAL FUNCTIONS ===
         function openSettings() {
@@ -1170,6 +1543,7 @@
 
         // App-Start
         window.onload = function() {
+            initDarkMode();
             loadStorage();
             loadCustomTricks();
             
@@ -1226,7 +1600,7 @@
         async function loadJSON() {
             // Zuerst versuchen URL aus Settings zu laden
             const savedUrl = localStorage.getItem(JSON_URL_KEY) || 
-                           'https://raw.githack.com/Digid0t/DigiDot_9/main/Hundetricks.json';
+                           'https://raw.githack.com/Geistesblitz4Erfurt/hundetricks/main/Hundetricks.json';
             
             try {
                 const response = await fetch(savedUrl);
@@ -1336,6 +1710,7 @@
             });
 
             updateUI();
+            generateNavigation(data);
         }
 
         function createTrickCard(trick, color) {
