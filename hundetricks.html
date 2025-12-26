@@ -1049,7 +1049,7 @@
                     
                     <input type="text" class="input-field" id="jsonUrl" 
                            placeholder="https://example.com/tricks.json" 
-                           value="https://raw.githack.com/Digid0t/DigiDot_9/main/Hundetricks.json">
+                           value="https://raw.githubusercontent.com/Digid0t/DigiDot_9/main/Hundetricks.json">
                     <button class="btn btn-secondary btn-full" onclick="loadJSONFromURL()">
                         🔗 Von URL laden
                     </button>
@@ -1099,9 +1099,9 @@
                 <div class="setting-group">
                     <label class="setting-label">Kategorie</label>
                     <select class="input-field" id="newTrickCategory">
-                        <option value="beginner">Anfänger</option>
-                        <option value="intermediate">Fortgeschritten</option>
-                        <option value="advanced">Profi</option>
+                        <option value="beginner">Anfänger (Green)</option>
+                        <option value="intermediate">Fortgeschritten (Yellow)</option>
+                        <option value="advanced">Profi (Red)</option>
                     </select>
                 </div>
 
@@ -1227,7 +1227,7 @@
                 header.style.borderLeftColor = color;
                 header.style.borderLeftWidth = '4px';
                 header.innerHTML = `
-                    <span>${cat.meta.category_name} (${cat.list.length})</span>
+                    <span>${cleanCategoryName(cat.meta.category_name)} (${cat.list.length})</span>
                     <span class="nav-arrow">▼</span>
                 `;
                 
@@ -1613,63 +1613,84 @@
         }
 
         async function loadJSON() {
-            // Zuerst versuchen URL aus Settings zu laden
-            const savedUrl = localStorage.getItem(JSON_URL_KEY) || 
-                           'https://raw.githack.com/Digid0t/DigiDot_9/main/Hundetricks.json';
+            // Mehrere Fallback-URLs für maximale Zuverlässigkeit
+            const fallbackUrls = [
+                localStorage.getItem(JSON_URL_KEY),
+                'https://raw.githubusercontent.com/Digid0t/DigiDot_9/main/Hundetricks.json',
+                'https://cdn.jsdelivr.net/gh/Digid0t/DigiDot_9@main/Hundetricks.json',
+                'https://raw.githack.com/Digid0t/DigiDot_9/main/Hundetricks.json'
+            ].filter(url => url); // Entferne null/undefined
             
-            try {
-                const response = await fetch(savedUrl);
+            let lastError = null;
+            
+            for (let i = 0; i < fallbackUrls.length; i++) {
+                const url = fallbackUrls[i];
+                console.log(`Versuche JSON zu laden von: ${url}`);
                 
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
+                try {
+                    const response = await fetch(url, {
+                        cache: 'no-cache',
+                        headers: {
+                            'Accept': 'application/json'
+                        }
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    
+                    const data = await response.json();
+                    console.log('✅ Daten erfolgreich geladen von:', url);
+                    
+                    currentData = data;
+                    localStorage.setItem(FULL_DATA_KEY, JSON.stringify(data));
+                    
+                    mergeCustomTricks();
+                    renderApp(currentData);
+                    return; // Erfolgreich geladen, Funktion beenden
+                } catch(err) {
+                    console.warn(`Fehler beim Laden von ${url}:`, err.message);
+                    lastError = err;
+                    // Versuche nächste URL
                 }
-                
-                const data = await response.json();
-                console.log('Daten erfolgreich geladen:', data);
-                
-                currentData = data;
-                localStorage.setItem(FULL_DATA_KEY, JSON.stringify(data));
-                
-                mergeCustomTricks();
-                renderApp(currentData);
-            } catch(err) {
-                console.error("Fehler beim Laden der JSON:", err);
-                
-                let errorMessage = '<div style="text-align:center; padding:30px 20px; color:#e53e3e;">';
-                errorMessage += '<div style="font-size:3rem; margin-bottom:20px;">⚠️</div>';
-                errorMessage += '<h2 style="margin:0 0 20px 0; font-size:1.5rem;">Ladefehler</h2>';
-                
-                if (err.message.includes('quota') || err.message.includes('exceeded')) {
-                    errorMessage += '<div style="background:#fff3cd; color:#856404; padding:20px; border-radius:12px; margin:20px auto; max-width:500px; text-align:left;">';
-                    errorMessage += '<h3 style="margin:0 0 15px 0; font-size:1.1rem;">⚠️ Rate Limit erreicht</h3>';
-                    errorMessage += '<p style="margin:0 0 15px 0; line-height:1.6;">Der externe Server hat zu viele Anfragen erhalten.</p>';
-                    errorMessage += '<h4 style="margin:15px 0 10px 0; font-size:1rem;">✅ Lösung:</h4>';
-                    errorMessage += '<p style="margin:0; font-weight:600;">Laden Sie die JSON-Datei direkt über ⚙️ Einstellungen → "Datei vom Gerät laden"</p>';
-                    errorMessage += '</div>';
-                } else if (err.name === 'TypeError' && err.message.includes('Failed to fetch')) {
-                    errorMessage += '<div style="background:#fff3cd; color:#856404; padding:20px; border-radius:12px; margin:20px auto; max-width:500px; text-align:left;">';
-                    errorMessage += '<h3 style="margin:0 0 15px 0; font-size:1.1rem;">🔒 CORS-Sicherheitssperre</h3>';
-                    errorMessage += '<p style="margin:0 0 15px 0; line-height:1.6;">Die Datei wird direkt vom Dateisystem geöffnet. Browser blockieren externe Requests aus Sicherheitsgründen.</p>';
-                    errorMessage += '<h4 style="margin:15px 0 10px 0; font-size:1rem;">✅ Lösungen:</h4>';
-                    errorMessage += '<ol style="margin:0; padding-left:20px; line-height:1.8;">';
-                    errorMessage += '<li><strong>Eigene JSON laden:</strong> Nutzen Sie ⚙️ Einstellungen → "Datei vom Gerät laden"</li>';
-                    errorMessage += '<li><strong>Online hosten:</strong> Laden Sie die Datei auf einen Webserver (z.B. GitHub Pages, Netlify)</li>';
-                    errorMessage += '<li><strong>Lokaler Server:</strong> Nutzen Sie einen einfachen HTTP-Server (Python: <code style="background:#eee; padding:2px 6px; border-radius:3px;">python -m http.server</code>)</li>';
-                    errorMessage += '</ol>';
-                    errorMessage += '</div>';
-                } else {
-                    errorMessage += '<p style="margin:20px 0;">Fehlerdetails: ' + err.message + '</p>';
-                    errorMessage += '<p>Bitte überprüfen Sie Ihre Internetverbindung oder laden Sie die JSON über ⚙️ Einstellungen.</p>';
-                }
-                
-                errorMessage += '<div style="margin-top:30px; padding:20px; background:var(--bg-main); border-radius:12px; max-width:500px; margin-left:auto; margin-right:auto; border: 2px solid #667eea;">';
-                errorMessage += '<h3 style="margin:0 0 10px 0; color:#667eea;">📱 Tipp: Laden Sie Ihre eigene JSON-Datei!</h3>';
-                errorMessage += '<p style="margin:0; font-size:0.9rem; color:var(--text-secondary);">Klicken Sie auf ⚙️ <strong>Einstellungen</strong> und dann auf <strong>"Datei vom Gerät laden"</strong>.</p>';
-                errorMessage += '</div>';
-                errorMessage += '</div>';
-                
-                document.getElementById('tricksContainer').innerHTML = errorMessage;
             }
+            
+            // Alle URLs fehlgeschlagen, zeige Fehler
+            console.error("Alle URLs fehlgeschlagen, letzter Fehler:", lastError);
+            
+            let errorMessage = '<div style="text-align:center; padding:30px 20px; color:var(--text-primary);">';
+            errorMessage += '<div style="font-size:3rem; margin-bottom:20px;">⚠️</div>';
+            errorMessage += '<h2 style="margin:0 0 20px 0; font-size:1.5rem; color:#e53e3e;">Ladefehler</h2>';
+            
+            errorMessage += '<div style="background:var(--card-bg); padding:24px; border-radius:12px; margin:20px auto; max-width:500px; text-align:left; border: 2px solid var(--border-color);">';
+            errorMessage += '<h3 style="margin:0 0 15px 0; font-size:1.1rem; color:var(--text-primary);">📥 Empfohlene Lösungen:</h3>';
+            
+            errorMessage += '<div style="margin-bottom:20px;">';
+            errorMessage += '<p style="margin:0 0 10px 0; font-weight:600; color:var(--text-primary);">1️⃣ Datei vom Gerät laden (Empfohlen)</p>';
+            errorMessage += '<p style="margin:0 0 10px 0; color:var(--text-secondary); font-size:0.9rem;">Klicken Sie oben auf <strong>⚙️ Einstellungen</strong> → <strong>"📁 Datei vom Gerät laden"</strong></p>';
+            errorMessage += '</div>';
+            
+            errorMessage += '<div style="margin-bottom:20px;">';
+            errorMessage += '<p style="margin:0 0 10px 0; font-weight:600; color:var(--text-primary);">2️⃣ JSON herunterladen</p>';
+            errorMessage += '<p style="margin:0 0 10px 0; color:var(--text-secondary); font-size:0.9rem;">Laden Sie die Datei direkt von GitHub:</p>';
+            errorMessage += '<a href="https://github.com/Digid0t/DigiDot_9" target="_blank" style="display:inline-block; background:var(--gradient-primary); color:white; padding:10px 20px; border-radius:8px; text-decoration:none; margin-top:8px;">📂 Zum GitHub Repository</a>';
+            errorMessage += '</div>';
+            
+            errorMessage += '<div>';
+            errorMessage += '<p style="margin:0 0 10px 0; font-weight:600; color:var(--text-primary);">3️⃣ Internetverbindung prüfen</p>';
+            errorMessage += '<p style="margin:0; color:var(--text-secondary); font-size:0.9rem;">Stellen Sie sicher, dass Sie mit dem Internet verbunden sind.</p>';
+            errorMessage += '</div>';
+            errorMessage += '</div>';
+            
+            if (lastError) {
+                errorMessage += '<div style="background:var(--bg-main); padding:16px; border-radius:8px; margin:20px auto; max-width:500px; font-size:0.85rem; color:var(--text-secondary); border-left: 4px solid #e53e3e;">';
+                errorMessage += '<strong>Fehlerdetails:</strong><br>' + lastError.message;
+                errorMessage += '</div>';
+            }
+            
+            errorMessage += '</div>';
+            
+            document.getElementById('tricksContainer').innerHTML = errorMessage;
         }
 
         function renderApp(data) {
@@ -1709,7 +1730,7 @@
                 header.className = 'cat-header active';
                 header.innerHTML = `
                     <div class="cat-title">
-                        <span>${meta.category_name}</span>
+                        <span>${cleanCategoryName(meta.category_name)}</span>
                         <span class="cat-count" style="background: ${themeColor}20; color: ${themeColor};">${cat.list.length}</span>
                     </div>
                     <span class="arrow" style="color: ${themeColor};">▼</span>
@@ -1938,6 +1959,13 @@
                 'red': '#e53e3e'
             };
             return map[code] || '#667eea';
+        }
+
+        function cleanCategoryName(name) {
+            // Entfernt Farben in Klammern aus Kategorienamen
+            // z.B. "Anfänger (Green)" -> "Anfänger"
+            if (!name) return name;
+            return name.replace(/\s*\([^)]*\)\s*$/, '').trim();
         }
 
         function saveStorage() {
