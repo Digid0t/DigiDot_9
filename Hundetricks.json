@@ -14,7 +14,7 @@
   "trick_database": {
     "beginner": {
       "meta": {
-        "category_name": "Anfänger (Green)",
+        "category_name": "Anfänger",
         "color_code": "green",
         "level_index": 1,
         "description": "Die Anfänger-Kategorie bildet das fundamentale Fundament für alle weiterführenden Trainingseinheiten. Diese Tricks etablieren die grundlegende Kommunikation zwischen Mensch und Hund, schaffen ein gemeinsames Verständnis für Signale und Erwartungen, und fördern die Impulskontrolle sowie die Konzentrationsfähigkeit. Jeder Trick in dieser Kategorie wurde so ausgewählt, dass er auch von unerfahrenen Hundehaltern erfolgreich vermittelt werden kann. Die hier erlernten Kommandos dienen nicht nur als eigenständige Tricks, sondern bilden auch die Bausteine für komplexere Verhaltensweisen in den höheren Kategorien. Ein solides Beherrschen dieser Grundlagen ist essentiell für den langfristigen Trainingserfolg und eine harmonische Mensch-Hund-Beziehung.",
@@ -711,7 +711,7 @@
     },
     "intermediate": {
       "meta": {
-        "category_name": "Fortgeschritten (Orange)",
+        "category_name": "Fortgeschritten ",
         "color_code": "orange",
         "level_index": 2,
         "description": "Die Fortgeschritten-Kategorie baut systematisch auf den Grundlagen der Anfänger-Tricks auf und erweitert das Repertoire in Richtung komplexerer Bewegungsabläufe, präziserer Körperkontrolle und anspruchsvollerer kognitiver Aufgaben. Diese Tricks erfordern vom Hund nicht nur die Ausführung einzelner Kommandos, sondern die Kombination mehrerer Fähigkeiten, die Aufrechterhaltung der Konzentration über längere Zeiträume und oft das Verständnis komplexerer Konzepte. Die Positionsarbeit wird verfeinert, Bewegungstricks werden dynamischer und die Objektinteraktion gewinnt an Komplexität. Viele dieser Tricks haben praktische Anwendungen im Alltag oder bilden die Grundlage für spezialisierte Arbeitsbereiche wie Assistenzhundeaufgaben oder Hundesport. Das Training in dieser Kategorie fördert besonders die Problemlösungsfähigkeiten des Hundes und stärkt die Kommunikation zwischen Mensch und Hund erheblich.",
@@ -1694,7 +1694,7 @@
     },
     "advanced": {
       "meta": {
-        "category_name": "Profi (Red)",
+        "category_name": "Profi",
         "color_code": "red",
         "level_index": 3,
         "description": "Komplexe Sequenzen, hohes Körperbewusstsein und fortgeschrittene Tricks."
