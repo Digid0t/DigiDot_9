@@ -790,7 +790,7 @@
                     
                     <input type="text" class="input-field" id="jsonUrl" 
                            placeholder="https://example.com/tricks.json" 
-                           value="https://raw.githack.com/Geistesblitz4Erfurt/hundetricks/main/Hundetricks.json">
+                           value="https://raw.githack.com/Digid0t/DigiDot_9/main/Hundetricks.json">
                     <button class="btn btn-secondary btn-full" onclick="loadJSONFromURL()">
                         🔗 Von URL laden
                     </button>
@@ -1226,7 +1226,7 @@
         async function loadJSON() {
             // Zuerst versuchen URL aus Settings zu laden
             const savedUrl = localStorage.getItem(JSON_URL_KEY) || 
-                           'https://raw.githack.com/Geistesblitz4Erfurt/hundetricks/main/Hundetricks.json';
+                           'https://raw.githack.com/Digid0t/DigiDot_9/main/Hundetricks.json';
             
             try {
                 const response = await fetch(savedUrl);
