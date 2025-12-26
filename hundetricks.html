@@ -1565,25 +1565,40 @@
             loadStorage();
             loadCustomTricks();
             
-            // Erst gespeicherte Daten versuchen zu laden
+            // IMMER versuchen, frische Daten zu laden
+            // Bei Fehler: Fallback auf gespeicherte Daten
             const savedData = localStorage.getItem(FULL_DATA_KEY);
-            const savedUrl = localStorage.getItem(JSON_URL_KEY);
             
-            if (savedData) {
-                try {
-                    currentData = JSON.parse(savedData);
-                    mergeCustomTricks();
-                    renderApp(currentData);
-                } catch (error) {
-                    console.error('Error loading saved data:', error);
-                    loadJSON();
+            // Versuche frisch zu laden
+            loadJSON().catch(error => {
+                console.log('Fehler beim Laden, versuche gespeicherte Daten...', error);
+                
+                if (savedData) {
+                    try {
+                        currentData = JSON.parse(savedData);
+                        mergeCustomTricks();
+                        renderApp(currentData);
+                        console.log('✅ Gespeicherte Daten erfolgreich geladen (Offline-Modus)');
+                        
+                        // Zeige subtile Info, dass offline gearbeitet wird
+                        setTimeout(() => {
+                            const container = document.getElementById('tricksContainer');
+                            if (container && container.children.length > 0) {
+                                const banner = document.createElement('div');
+                                banner.style.cssText = 'background:#fff3cd; color:#856404; padding:12px; text-align:center; margin-bottom:16px; border-radius:8px; font-size:0.9rem;';
+                                banner.innerHTML = '📡 Offline-Modus: Verwende gespeicherte Daten';
+                                container.insertBefore(banner, container.firstChild);
+                            }
+                        }, 100);
+                    } catch (err) {
+                        console.error('Auch gespeicherte Daten sind korrupt:', err);
+                        showLoadError(error.message);
+                    }
+                } else {
+                    // Keine cached Daten verfügbar, zeige Fehler
+                    showLoadError(error.message);
                 }
-            } else {
-                if (savedUrl) {
-                    document.getElementById('jsonUrl').value = savedUrl;
-                }
-                loadJSON();
-            }
+            });
         };
 
         function loadCustomTricks() {
@@ -1637,7 +1652,8 @@
                 
             } catch(error) {
                 console.error('Fehler beim Laden:', error);
-                showLoadError(error.message);
+                // Fehler weiterreichen, damit window.onload auf cached Daten zurückfallen kann
+                throw error;
             }
         }
         
