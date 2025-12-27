@@ -4,7 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hunde Trick-Datenbank</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Google Fonts mit Fallback -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'; this.onload=null;">
+    <noscript><link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet"></noscript>
     <style>
         :root {
             --gradient-primary: linear-gradient(135deg, #2d7a5e 0%, #1e5a42 100%);
@@ -54,7 +56,7 @@
         }
 
         body {
-            font-family: 'Poppins', -apple-system, BlinkMacSystemFont, sans-serif;
+            font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji';
             background: var(--bg-main);
             color: var(--text-primary);
             margin: 0;
@@ -2411,9 +2413,12 @@
                 return;
             }
 
-            // Web Speech API Unterstützung prüfen
-            if (!('speechSynthesis' in window)) {
-                alert('⚠️ Ihr Browser unterstützt keine Sprachausgabe.\n\nBitte verwenden Sie einen modernen Browser wie Chrome, Edge oder Safari.');
+            // Web Speech API direkt prüfen (inkl. webkit prefix für Safari)
+            const synth = window.speechSynthesis || window.webkitSpeechSynthesis;
+            const SpeechSynthesisUtterance = window.SpeechSynthesisUtterance || window.webkitSpeechSynthesisUtterance;
+            
+            if (!synth || !SpeechSynthesisUtterance) {
+                alert('⚠️ Ihr Browser unterstützt keine Sprachausgabe.\n\nBitte verwenden Sie:\n• Chrome / Edge\n• Firefox\n• Safari\n• Opera');
                 return;
             }
 
@@ -2441,7 +2446,7 @@
             utterance.volume = settings.volume;
 
             // Deutsche Stimme bevorzugen
-            const voices = speechSynthesis.getVoices();
+            const voices = synth.getVoices();
             if (settings.voiceName) {
                 const savedVoice = voices.find(v => v.name === settings.voiceName);
                 if (savedVoice) {
@@ -2451,7 +2456,7 @@
                 // Automatisch beste deutsche Stimme wählen
                 const germanVoice = voices.find(v => v.lang.startsWith('de')) ||
                                    voices.find(v => v.lang === 'de-DE') ||
-                                   voices[0];
+                                   voices[0]; // Fallback: Erste verfügbare Stimme
                 if (germanVoice) {
                     utterance.voice = germanVoice;
                 }
@@ -2464,7 +2469,7 @@
                     buttonElement.classList.add('speaking');
                     buttonElement.setAttribute('aria-label', 'Vorlesen stoppen');
                 }
-                console.log('🔊 Sprachausgabe gestartet');
+                console.log('▶️ Sprachausgabe gestartet');
             };
 
             utterance.onend = () => {
@@ -2485,37 +2490,21 @@
                     buttonElement.classList.remove('speaking');
                 }
                 
+                // Nur echte Fehler anzeigen, nicht "interrupted" oder "canceled"
                 if (event.error !== 'interrupted' && event.error !== 'canceled') {
-                    // Benutzerfreundliche Fehlermeldungen
-                    let errorMsg = '';
-                    switch(event.error) {
-                        case 'synthesis-failed':
-                            errorMsg = 'Die Sprachausgabe konnte nicht gestartet werden.\n\nMögliche Ursachen:\n• Der Text ist zu lang\n• Keine Internetverbindung (bei manchen Browsern)\n• Browser-Einschränkung\n\nVersuchen Sie:\n• Einzelne Tricks statt alle auf einmal vorlesen\n• Browser neu laden';
-                            break;
-                        case 'network':
-                            errorMsg = 'Keine Internetverbindung für die Sprachausgabe.\n\nEinige Browser benötigen Internet für TTS.';
-                            break;
-                        case 'synthesis-unavailable':
-                            errorMsg = 'Sprachausgabe nicht verfügbar.\n\nBitte verwenden Sie Chrome, Edge oder Safari.';
-                            break;
-                        case 'audio-busy':
-                            errorMsg = 'Audio-System ist beschäftigt.\n\nBitte warten Sie einen Moment und versuchen Sie es erneut.';
-                            break;
-                        default:
-                            errorMsg = `Unbekannter Fehler: ${event.error}`;
-                    }
-                    alert('⚠️ Fehler bei der Sprachausgabe\n\n' + errorMsg);
+                    alert('⚠️ Fehler bei der Sprachausgabe: ' + event.error + '\n\nBitte versuchen Sie es erneut.');
                 }
             };
 
             // Speichere und starte
             currentSpeech = utterance;
-            speechSynthesis.speak(utterance);
+            synth.speak(utterance);
         }
 
         function stopSpeech() {
-            if (isSpeaking && speechSynthesis.speaking) {
-                speechSynthesis.cancel();
+            const synth = window.speechSynthesis || window.webkitSpeechSynthesis;
+            if (synth && isSpeaking && synth.speaking) {
+                synth.cancel();
                 isSpeaking = false;
                 currentSpeech = null;
                 
@@ -2553,52 +2542,38 @@
         function speakTrickCard(trick, categoryName, buttonElement) {
             let text = `${trick.name || trick.titel}. Kategorie: ${categoryName}. `;
             
-            // Handzeichen
-            if (trick.handzeichen_kurz || trick.handzeichen) {
-                text += `Handzeichen: ${trick.handzeichen_kurz || ''}. `;
-                if (trick.handzeichen && trick.handzeichen !== trick.handzeichen_kurz) {
-                    text += `${trick.handzeichen}. `;
-                }
+            // NUR Kurztexte vorlesen (wie in der Anzeige)
+            
+            // Handzeichen (nur kurz)
+            if (trick.handzeichen_kurz) {
+                text += `Handzeichen: ${trick.handzeichen_kurz}. `;
             }
             
-            // Bewegungsablauf
-            if (trick.bewegungsablauf_kurz || trick.bewegungsablauf) {
-                text += `Bewegungsablauf: ${trick.bewegungsablauf_kurz || ''}. `;
-                if (trick.bewegungsablauf && trick.bewegungsablauf !== trick.bewegungsablauf_kurz) {
-                    text += `${trick.bewegungsablauf}. `;
-                }
+            // Bewegungsablauf (nur kurz)
+            if (trick.bewegungsablauf_kurz) {
+                text += `Bewegungsablauf: ${trick.bewegungsablauf_kurz}. `;
             }
             
-            // Endposition
-            if (trick.endposition_kurz || trick.endposition) {
-                text += `Endposition: ${trick.endposition_kurz || ''}. `;
-                if (trick.endposition && trick.endposition !== trick.endposition_kurz) {
-                    text += `${trick.endposition}. `;
-                }
+            // Endposition (nur kurz)
+            if (trick.endposition_kurz) {
+                text += `Endposition: ${trick.endposition_kurz}. `;
             }
             
-            // Trainingstipps
-            if (trick.trainingstipps_kurz || trick.trainingstipps) {
-                text += `Trainingstipps: ${trick.trainingstipps_kurz || ''}. `;
-                if (trick.trainingstipps && trick.trainingstipps !== trick.trainingstipps_kurz) {
-                    text += `${trick.trainingstipps}. `;
-                }
+            // Trainingstipps (nur kurz)
+            if (trick.trainingstipps_kurz) {
+                text += `Trainingstipps: ${trick.trainingstipps_kurz}. `;
             }
             
-            // Steigerungen/Varianten
+            // Steigerungen (nur kurz)
             if (trick.steigerung) {
-                const variantKeys = Object.keys(trick.steigerung).filter(k => k.startsWith('variante_') && !k.endsWith('_kurz')).sort();
+                const variantKeys = Object.keys(trick.steigerung).filter(k => k.endsWith('_kurz')).sort();
                 if (variantKeys.length > 0) {
                     text += `Steigerungen: `;
-                    variantKeys.forEach((key, index) => {
+                    variantKeys.forEach((key) => {
                         const num = key.split('_')[1];
-                        const shortKey = key + "_kurz";
-                        const shortText = trick.steigerung[shortKey];
-                        const longText = trick.steigerung[key];
-                        
-                        text += `Stufe ${num}: ${shortText || ''}. `;
-                        if (longText && longText !== shortText) {
-                            text += `${longText}. `;
+                        const shortText = trick.steigerung[key];
+                        if (shortText) {
+                            text += `Stufe ${num}: ${shortText}. `;
                         }
                     });
                 }
@@ -2619,9 +2594,16 @@
                 return;
             }
             
-            // NEUE STRATEGIE: Sequenzielles Vorlesen statt alles auf einmal
-            // Dies verhindert "synthesis-failed" bei langen Texten
+            // Speech API prüfen
+            const synth = window.speechSynthesis || window.webkitSpeechSynthesis;
+            const SpeechSynthesisUtterance = window.SpeechSynthesisUtterance || window.webkitSpeechSynthesisUtterance;
             
+            if (!synth || !SpeechSynthesisUtterance) {
+                alert('⚠️ Sprachausgabe nicht verfügbar.');
+                return;
+            }
+            
+            // Sequenzielles Vorlesen (verhindert "synthesis-failed" bei langen Texten)
             let currentIndex = 0;
             
             function speakNextTrick() {
@@ -2651,15 +2633,8 @@
                     text = `Kategorie ${categoryName}. ${tricks.length} Tricks. `;
                 }
                 
-                // Trick-Info (kompakt!)
+                // NUR der Trick-Name (keine Beschreibungen)
                 text += `Trick ${currentIndex + 1}: ${trick.titel || trick.name}. `;
-                
-                // Nur EINE Kurzbeschreibung (die erste verfügbare)
-                if (trick.handzeichen_kurz) {
-                    text += `${trick.handzeichen_kurz}. `;
-                } else if (trick.bewegungsablauf_kurz) {
-                    text += `${trick.bewegungsablauf_kurz}. `;
-                }
                 
                 // Vorlesen
                 const utterance = new SpeechSynthesisUtterance(text);
@@ -2670,8 +2645,8 @@
                 utterance.volume = settings.volume;
                 
                 // Deutsche Stimme
-                const voices = speechSynthesis.getVoices();
-                const germanVoice = voices.find(v => v.lang.startsWith('de'));
+                const voices = synth.getVoices();
+                const germanVoice = voices.find(v => v.lang && v.lang.startsWith('de'));
                 if (germanVoice) utterance.voice = germanVoice;
                 
                 utterance.onend = () => {
@@ -2683,7 +2658,7 @@
                 utterance.onerror = (event) => {
                     console.error('TTS Fehler bei Trick:', trick.titel, event.error);
                     
-                    // Bei Fehler: Stoppen und Fehlermeldung
+                    // Bei Fehler: Stoppen
                     if (buttonElement) {
                         buttonElement.classList.remove('speaking');
                     }
@@ -2691,16 +2666,12 @@
                     currentSpeech = null;
                     
                     if (event.error !== 'interrupted' && event.error !== 'canceled') {
-                        let errorMsg = `Fehler beim Vorlesen von "${trick.titel}"`;
-                        if (event.error === 'synthesis-failed') {
-                            errorMsg += '\n\nDie Wiedergabe wurde gestoppt.\nVersuchen Sie einzelne Tricks vorzulesen.';
-                        }
-                        alert('⚠️ ' + errorMsg);
+                        alert(`⚠️ Fehler beim Vorlesen von "${trick.titel}"\n\nBitte versuchen Sie einzelne Tricks vorzulesen.`);
                     }
                 };
                 
                 currentSpeech = utterance;
-                speechSynthesis.speak(utterance);
+                synth.speak(utterance);
             }
             
             // Markiere Button als aktiv
@@ -2740,14 +2711,22 @@
         // Stimmen laden (wichtig für Chrome/Edge)
         function loadVoices() {
             return new Promise((resolve) => {
-                let voices = speechSynthesis.getVoices();
+                const synth = window.speechSynthesis || window.webkitSpeechSynthesis;
+                if (!synth) {
+                    resolve([]);
+                    return;
+                }
+                
+                let voices = synth.getVoices();
                 if (voices.length > 0) {
                     resolve(voices);
                 } else {
-                    speechSynthesis.onvoiceschanged = () => {
-                        voices = speechSynthesis.getVoices();
+                    synth.onvoiceschanged = () => {
+                        voices = synth.getVoices();
                         resolve(voices);
                     };
+                    // Timeout nach 2 Sekunden
+                    setTimeout(() => resolve(synth.getVoices()), 2000);
                 }
             });
         }
@@ -2846,12 +2825,7 @@
         }
 
         async function loadJSON() {
-            // INTELLIGENTE DOMAIN-ERKENNUNG - verhindert CORS-Probleme!
-            const currentUrl = window.location.href;
-            const currentHost = window.location.hostname;
-            
-            console.log('🌐 Aktuelle Seite:', currentUrl);
-            console.log('🏠 Host:', currentHost);
+            console.log('🚀 STARTE JSON-LADEN MIT MEHRFACHEN FALLBACKS');
             
             const githubConfig = {
                 owner: 'Digid0t',
@@ -2860,125 +2834,144 @@
                 file: 'Hundetricks.json'
             };
             
-            let urls = [];
+            // OPTIMIERTE URL-LISTE - Von zuverlässigsten zu weniger zuverlässigen
+            const urls = [
+                // 1. jsDelivr CDN - SEHR zuverlässig, fast, globales CDN
+                `https://cdn.jsdelivr.net/gh/${githubConfig.owner}/${githubConfig.repo}@${githubConfig.branch}/${githubConfig.file}`,
+                
+                // 2. GitHack - gut für Entwicklung
+                `https://raw.githack.com/${githubConfig.owner}/${githubConfig.repo}/${githubConfig.branch}/${githubConfig.file}`,
+                
+                // 3. Raw GitHub - manchmal CORS-Probleme
+                `https://raw.githubusercontent.com/${githubConfig.owner}/${githubConfig.repo}/${githubConfig.branch}/${githubConfig.file}`,
+                
+                // 4. GitHack CDN (cached)
+                `https://rawcdn.githack.com/${githubConfig.owner}/${githubConfig.repo}/${githubConfig.branch}/${githubConfig.file}`,
+                
+                // 5. Statically CDN - Alternative
+                `https://cdn.statically.io/gh/${githubConfig.owner}/${githubConfig.repo}/${githubConfig.branch}/${githubConfig.file}`,
+                
+                // 6. Kombineal CDN
+                `https://combinatronics.io/raw?url=https://github.com/${githubConfig.owner}/${githubConfig.repo}/blob/${githubConfig.branch}/${githubConfig.file}`,
+                
+                // 7. Relativ (falls lokal gehostet)
+                `./${githubConfig.file}`,
+                `${githubConfig.file}`
+            ];
             
-            // KRITISCH: Wenn von GitHack geladen, MUSS JSON auch von GitHack kommen!
-            if (currentHost.includes('githack.com') || currentHost.includes('rawgit')) {
-                console.log('🔥 Von GitHack geladen - verwende GitHack URLs (CORS-sicher!)');
-                urls = [
-                    // 1. Relative URL - BESTE Option!
-                    `./${githubConfig.file}`,
-                    `${githubConfig.file}`,
-                    
-                    // 2. GitHack - gleiche Domain!
-                    `https://raw.githack.com/${githubConfig.owner}/${githubConfig.repo}/${githubConfig.branch}/${githubConfig.file}`,
-                    `https://rawcdn.githack.com/${githubConfig.owner}/${githubConfig.repo}/${githubConfig.branch}/${githubConfig.file}`,
-                ];
-            }
-            // Von GitHub Pages oder lokaler Server
-            else if (currentHost.includes('github.io') || currentHost.includes('localhost') || currentHost.includes('127.0.0.1')) {
-                console.log('📄 Von GitHub Pages/Lokal - verwende relative URLs');
-                urls = [
-                    `./${githubConfig.file}`,
-                    `${githubConfig.file}`,
-                    `https://raw.githack.com/${githubConfig.owner}/${githubConfig.repo}/${githubConfig.branch}/${githubConfig.file}`,
-                ];
-            }
-            // Von file:// Protokoll (lokal geöffnet)
-            else if (currentUrl.startsWith('file://')) {
-                console.log('💾 Lokal geöffnet - verwende alle externen URLs');
-                urls = [
-                    `https://raw.githack.com/${githubConfig.owner}/${githubConfig.repo}/${githubConfig.branch}/${githubConfig.file}`,
-                    `https://rawcdn.githack.com/${githubConfig.owner}/${githubConfig.repo}/${githubConfig.branch}/${githubConfig.file}`,
-                    `https://cdn.jsdelivr.net/gh/${githubConfig.owner}/${githubConfig.repo}@${githubConfig.branch}/${githubConfig.file}`,
-                    `https://raw.githubusercontent.com/${githubConfig.owner}/${githubConfig.repo}/${githubConfig.branch}/${githubConfig.file}`,
-                ];
-            }
-            // Fallback: Alle Varianten
-            else {
-                console.log('🌍 Unbekannte Domain - versuche alle Optionen');
-                urls = [
-                    `./${githubConfig.file}`,
-                    `https://raw.githack.com/${githubConfig.owner}/${githubConfig.repo}/${githubConfig.branch}/${githubConfig.file}`,
-                    `https://rawcdn.githack.com/${githubConfig.owner}/${githubConfig.repo}/${githubConfig.branch}/${githubConfig.file}`,
-                    `https://cdn.jsdelivr.net/gh/${githubConfig.owner}/${githubConfig.repo}@${githubConfig.branch}/${githubConfig.file}`,
-                    `https://raw.githubusercontent.com/${githubConfig.owner}/${githubConfig.repo}/${githubConfig.branch}/${githubConfig.file}`,
-                ];
-            }
-            
-            console.log('🔄 Verwende folgende URL-Reihenfolge:', urls);
+            console.log('📋 Verwende folgende Fallback-URLs:', urls.length, 'Optionen');
             
             let lastError = null;
+            let successUrl = null;
             
-            // Versuche jede URL nacheinander
+            // Versuche jede URL mit Timeout
             for (let i = 0; i < urls.length; i++) {
                 const url = urls[i];
-                const urlType = url.startsWith('./') || !url.includes('://') ? 'Relativ' : 
-                               url.includes('githack') ? 'GitHack' : 
-                               url.includes('jsdelivr') ? 'jsDelivr CDN' :
-                               url.includes('githubusercontent') ? 'Raw GitHub' : 'Unbekannt';
+                const urlName = url.includes('jsdelivr') ? 'jsDelivr CDN' :
+                               url.includes('raw.githack') ? 'GitHack' :
+                               url.includes('rawcdn.githack') ? 'GitHack CDN' :
+                               url.includes('githubusercontent') ? 'GitHub Raw' :
+                               url.includes('statically') ? 'Statically CDN' :
+                               url.includes('combinatronics') ? 'Combineal' :
+                               url.startsWith('./') || !url.includes('://') ? 'Relativ' : 'Unbekannt';
                 
                 try {
-                    console.log(`\n🔍 Versuch ${i + 1}/${urls.length}: ${urlType}`);
-                    console.log(`   URL: ${url}`);
+                    console.log(`\n🔄 Versuch ${i + 1}/${urls.length}: ${urlName}`);
+                    console.log(`   URL: ${url.substring(0, 80)}...`);
+                    
+                    // Fetch mit Timeout (5 Sekunden)
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 5000);
                     
                     const fetchOptions = {
                         method: 'GET',
                         cache: 'no-cache',
+                        signal: controller.signal,
                         headers: {
-                            'Accept': 'application/json',
+                            'Accept': 'application/json, text/plain, */*',
                         }
                     };
                     
-                    // Bei relativen URLs keine CORS-Header nötig
-                    if (!url.startsWith('./') && url.includes('://')) {
+                    // CORS nur bei externen URLs (Firefox-kompatibel)
+                    if (url.includes('://')) {
                         fetchOptions.mode = 'cors';
+                        fetchOptions.credentials = 'omit'; // Firefox braucht das manchmal
                     }
                     
                     const response = await fetch(url, fetchOptions);
+                    clearTimeout(timeoutId);
+                    
+                    console.log(`   Status: ${response.status} ${response.statusText}`);
                     
                     if (!response.ok) {
                         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
                     }
                     
+                    // Prüfe Content-Type
+                    const contentType = response.headers.get('content-type');
+                    console.log(`   Content-Type: ${contentType}`);
+                    
                     const data = await response.json();
                     
-                    // VALIDIERUNG
-                    if (!data.trick_database) {
-                        throw new Error('Ungültige Datenstruktur: "trick_database" fehlt');
+                    // KRITISCHE VALIDIERUNG
+                    if (!data) {
+                        throw new Error('Leere Antwort - keine Daten');
                     }
                     
-                    console.log(`✅✅✅ ERFOLG mit ${urlType}!`);
-                    console.log('📦 JSON erfolgreich geladen und validiert');
-                    console.log('📊 Kategorien gefunden:', Object.keys(data.trick_database));
+                    if (!data.trick_database) {
+                        throw new Error('Ungültige Struktur: "trick_database" fehlt');
+                    }
                     
+                    const categories = Object.keys(data.trick_database);
+                    if (categories.length === 0) {
+                        throw new Error('Keine Kategorien in trick_database gefunden');
+                    }
+                    
+                    console.log(`✅✅✅ ERFOLG MIT ${urlName}!`);
+                    console.log(`📦 JSON geladen: ${JSON.stringify(data).length} Zeichen`);
+                    console.log(`📊 Kategorien: ${categories.join(', ')}`);
+                    
+                    // Speichere Daten
                     currentData = data;
                     localStorage.setItem(FULL_DATA_KEY, JSON.stringify(data));
+                    successUrl = url;
                     
+                    // Merge und Render
                     mergeCustomTricks();
                     renderApp(currentData);
                     
-                    return; // Erfolg - beende Funktion
+                    console.log('🎉 JSON erfolgreich geladen und gerendert!');
+                    return; // ERFOLG!
                     
                 } catch(error) {
-                    console.warn(`⚠️ ${urlType} fehlgeschlagen:`, error.message);
+                    console.warn(`❌ ${urlName} fehlgeschlagen:`, error.message);
                     lastError = error;
                     
-                    // Bei GitHack URLs kurz warten
-                    if (url.includes('githack') && i < urls.length - 1) {
-                        console.log('⏳ Warte 1,5 Sekunden für GitHack CDN...');
-                        await new Promise(resolve => setTimeout(resolve, 1500));
+                    // CORS-Fehler oder Netzwerkfehler → Sofort weiter (kein Warten)
+                    const isCorsError = error.message.includes('CORS') || 
+                                       error.message.includes('Failed to fetch') ||
+                                       error.name === 'TypeError';
+                    
+                    // Nur bei Timeouts oder Server-Fehlern kurz warten
+                    if (!isCorsError && (url.includes('githack') || url.includes('statically')) && i < urls.length - 1) {
+                        console.log('⏳ Warte 500ms...');
+                        await new Promise(resolve => setTimeout(resolve, 500));
                     }
                     
-                    // Fahre mit nächster URL fort
+                    // Weiter zur nächsten URL
                     continue;
                 }
             }
             
-            // Alle Versuche fehlgeschlagen
-            console.error('❌❌❌ ALLE LADE-VERSUCHE FEHLGESCHLAGEN!');
+            // ALLE URLs fehlgeschlagen!
+            console.error('❌❌❌ KRITISCHER FEHLER: ALLE LADE-VERSUCHE FEHLGESCHLAGEN!');
             console.error('Letzter Fehler:', lastError);
-            throw new Error(`Konnte JSON von keiner Quelle laden. Letzter Fehler: ${lastError?.message || 'Unbekannt'}`);
+            console.error('Versuchte URLs:', urls);
+            
+            // Zeige Fehler-Dialog
+            showLoadError(`Alle ${urls.length} Lade-Versuche fehlgeschlagen.\n\nLetzter Fehler: ${lastError?.message || 'Unbekannt'}\n\nBitte laden Sie die JSON-Datei manuell oder prüfen Sie Ihre Internetverbindung.`);
+            
+            throw new Error(`JSON konnte von keiner Quelle geladen werden. Letzter Fehler: ${lastError?.message || 'Unbekannt'}`);
         }
         
         function showLoadError(errorMsg) {
