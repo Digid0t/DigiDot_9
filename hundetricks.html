@@ -3023,6 +3023,247 @@
             document.getElementById('tricksContainer').innerHTML = errorHTML;
         }
 
+        // === APPLICATION DESCRIPTION ===
+        function renderApplicationDescription(data, container) {
+            // Prüfe ob meta_info vorhanden
+            if (!data.meta_info) {
+                console.log('ℹ️ Keine meta_info in JSON vorhanden');
+                return;
+            }
+            
+            const meta = data.meta_info;
+            
+            // Prüfe ob irgendwelche relevanten Felder vorhanden sind
+            if (!meta.description && !meta.description_kurz && !meta.training_philosophy && 
+                !meta.usage_guidelines && !meta.completion_note) {
+                console.log('ℹ️ Keine Application Description Felder vorhanden');
+                return;
+            }
+            
+            console.log('📄 Rendere Application Description aus meta_info');
+            
+            const descriptionDiv = document.createElement('div');
+            descriptionDiv.className = 'app-description-section';
+            descriptionDiv.style.cssText = `
+                background: var(--card-bg);
+                border-radius: var(--radius-lg);
+                padding: 24px;
+                margin-bottom: 32px;
+                box-shadow: var(--shadow-md);
+                border-left: 4px solid #3ea876;
+            `;
+            
+            // === HEADER ===
+            const header = document.createElement('div');
+            header.style.cssText = 'display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;';
+            
+            const title = document.createElement('h2');
+            title.textContent = meta.title || '📋 Über diese Anwendung';
+            title.style.cssText = 'margin: 0; font-size: 1.4rem; color: var(--text-primary); font-weight: 700;';
+            
+            const ttsBtn = document.createElement('button');
+            ttsBtn.className = 'tts-btn';
+            ttsBtn.innerHTML = '🔊';
+            ttsBtn.setAttribute('aria-label', 'Beschreibung vorlesen');
+            ttsBtn.onclick = () => speakAppDescription(meta, ttsBtn);
+            
+            header.appendChild(title);
+            header.appendChild(ttsBtn);
+            descriptionDiv.appendChild(header);
+            
+            // === KURZE DESCRIPTION (erste ~5 Sätze oder description_kurz) ===
+            const shortDesc = meta.description_kurz || splitIntoSentences(meta.description || '', 5);
+            if (shortDesc) {
+                const shortP = document.createElement('p');
+                shortP.textContent = shortDesc;
+                shortP.style.cssText = 'margin: 0 0 16px 0; line-height: 1.6; color: var(--text-primary); font-size: 1.05rem;';
+                descriptionDiv.appendChild(shortP);
+            }
+            
+            // === MEHR ERFAHREN BUTTON ===
+            const hasMoreContent = meta.description || meta.training_philosophy || meta.training_philosophy_kurz || 
+                                   meta.usage_guidelines || meta.usage_guidelines_kurz ||
+                                   meta.completion_note;
+            
+            if (hasMoreContent) {
+                const expandBtn = document.createElement('button');
+                expandBtn.className = 'expand-btn';
+                expandBtn.innerHTML = '▼ Mehr erfahren';
+                expandBtn.style.cssText = `
+                    background: linear-gradient(135deg, #3ea876 0%, #2d8a5f 100%);
+                    color: white;
+                    border: none;
+                    padding: 12px 24px;
+                    border-radius: var(--radius-sm);
+                    cursor: pointer;
+                    font-weight: 600;
+                    font-size: 0.95rem;
+                    transition: all 0.3s ease;
+                    width: 100%;
+                    margin-top: 8px;
+                `;
+                expandBtn.onmouseover = () => expandBtn.style.transform = 'scale(1.02)';
+                expandBtn.onmouseout = () => expandBtn.style.transform = 'scale(1)';
+                
+                const expandedContent = document.createElement('div');
+                expandedContent.className = 'expanded-content';
+                expandedContent.style.cssText = 'display: none; margin-top: 24px;';
+                
+                // === VOLLSTÄNDIGE DESCRIPTION ===
+                if (meta.description && meta.description !== shortDesc) {
+                    addExpandableSection(expandedContent, '📖 Vollständige Beschreibung', meta.description, null);
+                }
+                
+                // === TRAININGSPHILOSOPHIE ===
+                if (meta.training_philosophy_kurz || meta.training_philosophy) {
+                    addExpandableSection(expandedContent, '🎓 Trainingsphilosophie', meta.training_philosophy, meta.training_philosophy_kurz);
+                }
+                
+                // === NUTZUNGSRICHTLINIEN ===
+                if (meta.usage_guidelines_kurz || meta.usage_guidelines) {
+                    addExpandableSection(expandedContent, '📜 Nutzungsrichtlinien', meta.usage_guidelines, meta.usage_guidelines_kurz);
+                }
+                
+                // === ABSCHLUSSHINWEIS ===
+                if (meta.completion_note) {
+                    addExpandableSection(expandedContent, '✅ Abschlusshinweis', meta.completion_note, null);
+                }
+                
+                expandBtn.onclick = () => {
+                    const isExpanded = expandedContent.style.display === 'block';
+                    expandedContent.style.display = isExpanded ? 'none' : 'block';
+                    expandBtn.innerHTML = isExpanded ? '▼ Mehr erfahren' : '▲ Weniger anzeigen';
+                };
+                
+                descriptionDiv.appendChild(expandBtn);
+                descriptionDiv.appendChild(expandedContent);
+            }
+            
+            // Füge am Anfang des Containers ein
+            container.insertBefore(descriptionDiv, container.firstChild);
+        }
+        
+        function addExpandableSection(parent, title, longText, shortText) {
+            const section = document.createElement('div');
+            section.style.cssText = 'margin-bottom: 20px; padding: 16px; background: var(--bg-main); border-radius: var(--radius-md); border-left: 3px solid #3ea876;';
+            
+            // Header mit Titel und TTS
+            const header = document.createElement('div');
+            header.style.cssText = 'display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;';
+            
+            const sectionTitle = document.createElement('h3');
+            sectionTitle.textContent = title;
+            sectionTitle.style.cssText = 'margin: 0; font-size: 1.15rem; color: var(--text-primary); font-weight: 600;';
+            
+            const ttsBtn = document.createElement('button');
+            ttsBtn.className = 'tts-btn tts-btn-small';
+            ttsBtn.innerHTML = '🔊';
+            ttsBtn.setAttribute('aria-label', `${title} vorlesen`);
+            ttsBtn.style.cssText = 'font-size: 1.2rem; padding: 6px 12px;';
+            
+            header.appendChild(sectionTitle);
+            header.appendChild(ttsBtn);
+            section.appendChild(header);
+            
+            // Kurztext (immer sichtbar wenn vorhanden)
+            if (shortText) {
+                const shortP = document.createElement('p');
+                shortP.textContent = shortText;
+                shortP.style.cssText = 'margin: 0 0 12px 0; line-height: 1.6; color: var(--text-primary);';
+                section.appendChild(shortP);
+                
+                // TTS für Kurztext
+                ttsBtn.onclick = () => toggleSpeech(shortText, ttsBtn);
+            }
+            
+            // Langtext (ausklappbar)
+            if (longText && longText !== shortText) {
+                const expandBtn = document.createElement('button');
+                expandBtn.className = 'expand-btn-small';
+                expandBtn.innerHTML = '▼ Mehr erfahren';
+                expandBtn.style.cssText = `
+                    background: transparent;
+                    color: #3ea876;
+                    border: 2px solid #3ea876;
+                    padding: 8px 16px;
+                    border-radius: var(--radius-sm);
+                    cursor: pointer;
+                    font-weight: 600;
+                    font-size: 0.85rem;
+                    transition: all 0.3s ease;
+                    margin-bottom: 12px;
+                `;
+                expandBtn.onmouseover = () => {
+                    expandBtn.style.background = '#3ea876';
+                    expandBtn.style.color = 'white';
+                };
+                expandBtn.onmouseout = () => {
+                    expandBtn.style.background = 'transparent';
+                    expandBtn.style.color = '#3ea876';
+                };
+                
+                const longDiv = document.createElement('div');
+                longDiv.style.cssText = 'display: none; margin-top: 12px; padding: 12px; background: var(--card-bg); border-radius: var(--radius-sm);';
+                
+                const longP = document.createElement('p');
+                longP.textContent = longText;
+                longP.style.cssText = 'margin: 0 0 12px 0; line-height: 1.6; color: var(--text-secondary);';
+                
+                const longTtsBtn = document.createElement('button');
+                longTtsBtn.className = 'tts-btn tts-btn-small';
+                longTtsBtn.innerHTML = '🔊 Vollständige Version vorlesen';
+                longTtsBtn.setAttribute('aria-label', `${title} vollständig vorlesen`);
+                longTtsBtn.style.cssText = 'font-size: 0.9rem; padding: 8px 16px;';
+                longTtsBtn.onclick = () => toggleSpeech(longText, longTtsBtn);
+                
+                longDiv.appendChild(longP);
+                longDiv.appendChild(longTtsBtn);
+                
+                expandBtn.onclick = () => {
+                    const isExpanded = longDiv.style.display === 'block';
+                    longDiv.style.display = isExpanded ? 'none' : 'block';
+                    expandBtn.innerHTML = isExpanded ? '▼ Mehr erfahren' : '▲ Weniger anzeigen';
+                };
+                
+                section.appendChild(expandBtn);
+                section.appendChild(longDiv);
+            } else if (longText) {
+                // Nur Langtext vorhanden (kein Kurztext)
+                const longP = document.createElement('p');
+                longP.textContent = longText;
+                longP.style.cssText = 'margin: 0; line-height: 1.6; color: var(--text-primary);';
+                section.appendChild(longP);
+                
+                ttsBtn.onclick = () => toggleSpeech(longText, ttsBtn);
+            }
+            
+            parent.appendChild(section);
+        }
+        
+        function speakAppDescription(meta, buttonElement) {
+            let text = '';
+            
+            // Titel falls vorhanden
+            if (meta.title) {
+                text += meta.title + '. ';
+            }
+            
+            // NUR Kurztexte vorlesen (beim Hauptbutton oben)
+            if (meta.description_kurz) {
+                text += meta.description_kurz;
+            } else if (meta.description) {
+                text += splitIntoSentences(meta.description, 5);
+            }
+            
+            toggleSpeech(text, buttonElement);
+        }
+        
+        function splitIntoSentences(text, count) {
+            if (!text) return '';
+            const sentences = text.match(/[^.!?]+[.!?]+/g) || [text];
+            return sentences.slice(0, count).join(' ').trim();
+        }
+
         function renderApp(data) {
             const container = document.getElementById('tricksContainer');
             container.innerHTML = '';
@@ -3075,6 +3316,9 @@
             // Zähle Total
             totalTricks = 0;
             categories.forEach(cat => totalTricks += cat.list.length);
+
+            // Render Application Description (falls vorhanden)
+            renderApplicationDescription(data, container);
 
             // Kategorien rendern
             console.log('🚀🚀🚀 STARTE KATEGORIE-RENDERING 🚀🚀🚀');

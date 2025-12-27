@@ -533,7 +533,7 @@
         },
         {
           "id": "083",
-          "position": "1.20",
+          "position": "1.28",
           "kategorie": "Anfänger",
           "titel": "Name",
           "handzeichen": "Beim Namen-Training wird typischerweise kein spezifisches Handzeichen verwendet, da der Fokus auf der verbalen Reaktion liegt. Der Name selbst ist das primäre Signal. Optionalerweise kann ein Fingerschnipsen oder Klatschen die Aufmerksamkeit verstärken, aber der gesprochene Name sollte ausreichen, um die sofortige Zuwendung des Hundes zu bewirken.",
@@ -555,7 +555,7 @@
         },
         {
           "id": "084",
-          "position": "1.21",
+          "position": "1.29",
           "kategorie": "Anfänger",
           "titel": "Aus/Lass es",
           "handzeichen": "Flache Hand mit ausgestreckten Fingern wird dem Hund entgegengestreckt, ähnlich einem Stopp-Signal. Die Handbewegung ist entschieden aber nicht aggressiv.",
@@ -577,7 +577,7 @@
         },
         {
           "id": "096",
-          "position": "1.22",
+          "position": "1.30",
           "kategorie": "Anfänger",
           "titel": "Hier/Komm",
           "handzeichen": "Offene Arme oder eine einladende Geste mit beiden Händen zum Körper hin. Alternativ kann auch in die Hände geklatscht werden, um die Aufmerksamkeit zu verstärken.",
@@ -599,7 +599,7 @@
         },
         {
           "id": "097",
-          "position": "1.23",
+          "position": "1.31",
           "kategorie": "Anfänger",
           "titel": "Schau/Blick",
           "handzeichen": "Das Handzeichen für Schau oder Blick wird ausgeführt, indem Sie mit dem Zeigefinger auf Ihr eigenes Auge oder Gesicht zeigen. Diese Geste ist intuitiv und signalisiert dem Hund, wohin er schauen soll. Alternativ können Sie mit beiden Händen einen Rahmen um Ihr Gesicht bilden, um die Aufmerksamkeit auf Ihre Augen zu lenken. Das Zeichen sollte deutlich und konsistent sein.",
@@ -1472,7 +1472,7 @@
         },
         {
           "id": "085",
-          "position": "2.31",
+          "position": "2.41",
           "kategorie": "Fortgeschritten",
           "titel": "Bring/Apportieren",
           "handzeichen": "Ausgestreckter Arm in Richtung des zu apportierenden Objekts, gefolgt von einer Handbewegung zurück zum Körper, die das Zurückbringen symbolisiert. und demonstriert das Konzept klar.",
@@ -1494,7 +1494,7 @@
         },
         {
           "id": "086",
-          "position": "2.32",
+          "position": "2.42",
           "kategorie": "Fortgeschritten",
           "titel": "Verbellen/Gib Laut",
           "handzeichen": "Hand wird zur Faust geformt und vor dem Körper nach oben bewegt, als würde man eine Pumpe betätigen. Alternativ kann die Hand ans eigene Ohr geführt werden.",
@@ -1516,7 +1516,7 @@
         },
         {
           "id": "087",
-          "position": "2.33",
+          "position": "2.43",
           "kategorie": "Fortgeschritten",
           "titel": "Rückwärts durch die Beine",
           "handzeichen": "Der Mensch steht in Schrittstellung und zeigt mit der Hand zwischen den eigenen Beinen hindurch nach hinten, um die gewünschte Bewegungsrichtung anzuzeigen.",
@@ -1538,7 +1538,7 @@
         },
         {
           "id": "100",
-          "position": "2.34",
+          "position": "2.44",
           "kategorie": "Fortgeschritten",
           "titel": "Über Hindernis springen",
           "handzeichen": "Ausgestreckte Hand zeigt in Richtung des Hindernisses, gefolgt von einer aufwärts gerichteten Bewegung, die den Sprung symbolisiert. und demonstriert das Konzept klar.",
