@@ -2200,7 +2200,13 @@
         }
 
         async function loadJSON() {
-            // Intelligente URL-Generierung mit Fallback-Strategie
+            // INTELLIGENTE DOMAIN-ERKENNUNG - verhindert CORS-Probleme!
+            const currentUrl = window.location.href;
+            const currentHost = window.location.hostname;
+            
+            console.log('🌐 Aktuelle Seite:', currentUrl);
+            console.log('🏠 Host:', currentHost);
+            
             const githubConfig = {
                 owner: 'Digid0t',
                 repo: 'DigiDot_9',
@@ -2208,69 +2214,95 @@
                 file: 'Hundetricks.json'
             };
             
-            // Generiere alle möglichen URL-Varianten
-            const urls = [
-                // 1. Lokale Datei (falls im selben Ordner)
-                `./${githubConfig.file}`,
-                `${githubConfig.file}`,
-                
-                // 2. GitHack CDN (schnell, cached)
-                `https://raw.githack.com/${githubConfig.owner}/${githubConfig.repo}/${githubConfig.branch}/${githubConfig.file}`,
-                
-                // 3. Raw GitHub (direkt)
-                `https://raw.githubusercontent.com/${githubConfig.owner}/${githubConfig.repo}/${githubConfig.branch}/${githubConfig.file}`,
-                
-                // 4. GitHub API (als letzter Ausweg)
-                `https://api.github.com/repos/${githubConfig.owner}/${githubConfig.repo}/contents/${githubConfig.file}?ref=${githubConfig.branch}`
-            ];
+            let urls = [];
             
-            console.log('🔄 Starte JSON-Laden mit Fallback-Strategie');
-            console.log('📋 Versuche folgende URLs in Reihenfolge:', urls);
+            // KRITISCH: Wenn von GitHack geladen, MUSS JSON auch von GitHack kommen!
+            if (currentHost.includes('githack.com') || currentHost.includes('rawgit')) {
+                console.log('🔥 Von GitHack geladen - verwende GitHack URLs (CORS-sicher!)');
+                urls = [
+                    // 1. Relative URL - BESTE Option!
+                    `./${githubConfig.file}`,
+                    `${githubConfig.file}`,
+                    
+                    // 2. GitHack - gleiche Domain!
+                    `https://raw.githack.com/${githubConfig.owner}/${githubConfig.repo}/${githubConfig.branch}/${githubConfig.file}`,
+                    `https://rawcdn.githack.com/${githubConfig.owner}/${githubConfig.repo}/${githubConfig.branch}/${githubConfig.file}`,
+                ];
+            }
+            // Von GitHub Pages oder lokaler Server
+            else if (currentHost.includes('github.io') || currentHost.includes('localhost') || currentHost.includes('127.0.0.1')) {
+                console.log('📄 Von GitHub Pages/Lokal - verwende relative URLs');
+                urls = [
+                    `./${githubConfig.file}`,
+                    `${githubConfig.file}`,
+                    `https://raw.githack.com/${githubConfig.owner}/${githubConfig.repo}/${githubConfig.branch}/${githubConfig.file}`,
+                ];
+            }
+            // Von file:// Protokoll (lokal geöffnet)
+            else if (currentUrl.startsWith('file://')) {
+                console.log('💾 Lokal geöffnet - verwende alle externen URLs');
+                urls = [
+                    `https://raw.githack.com/${githubConfig.owner}/${githubConfig.repo}/${githubConfig.branch}/${githubConfig.file}`,
+                    `https://rawcdn.githack.com/${githubConfig.owner}/${githubConfig.repo}/${githubConfig.branch}/${githubConfig.file}`,
+                    `https://cdn.jsdelivr.net/gh/${githubConfig.owner}/${githubConfig.repo}@${githubConfig.branch}/${githubConfig.file}`,
+                    `https://raw.githubusercontent.com/${githubConfig.owner}/${githubConfig.repo}/${githubConfig.branch}/${githubConfig.file}`,
+                ];
+            }
+            // Fallback: Alle Varianten
+            else {
+                console.log('🌍 Unbekannte Domain - versuche alle Optionen');
+                urls = [
+                    `./${githubConfig.file}`,
+                    `https://raw.githack.com/${githubConfig.owner}/${githubConfig.repo}/${githubConfig.branch}/${githubConfig.file}`,
+                    `https://rawcdn.githack.com/${githubConfig.owner}/${githubConfig.repo}/${githubConfig.branch}/${githubConfig.file}`,
+                    `https://cdn.jsdelivr.net/gh/${githubConfig.owner}/${githubConfig.repo}@${githubConfig.branch}/${githubConfig.file}`,
+                    `https://raw.githubusercontent.com/${githubConfig.owner}/${githubConfig.repo}/${githubConfig.branch}/${githubConfig.file}`,
+                ];
+            }
+            
+            console.log('🔄 Verwende folgende URL-Reihenfolge:', urls);
             
             let lastError = null;
             
             // Versuche jede URL nacheinander
             for (let i = 0; i < urls.length; i++) {
                 const url = urls[i];
-                const urlType = i === 0 || i === 1 ? 'Lokal' : 
-                               i === 2 ? 'GitHack CDN' : 
-                               i === 3 ? 'Raw GitHub' : 'GitHub API';
+                const urlType = url.startsWith('./') || !url.includes('://') ? 'Relativ' : 
+                               url.includes('githack') ? 'GitHack' : 
+                               url.includes('jsdelivr') ? 'jsDelivr CDN' :
+                               url.includes('githubusercontent') ? 'Raw GitHub' : 'Unbekannt';
                 
                 try {
                     console.log(`\n🔍 Versuch ${i + 1}/${urls.length}: ${urlType}`);
                     console.log(`   URL: ${url}`);
                     
-                    const response = await fetch(url, {
+                    const fetchOptions = {
                         method: 'GET',
-                        mode: 'cors',
                         cache: 'no-cache',
                         headers: {
                             'Accept': 'application/json',
-                            'User-Agent': 'TrickTraining-App'
                         }
-                    });
+                    };
+                    
+                    // Bei relativen URLs keine CORS-Header nötig
+                    if (!url.startsWith('./') && url.includes('://')) {
+                        fetchOptions.mode = 'cors';
+                    }
+                    
+                    const response = await fetch(url, fetchOptions);
                     
                     if (!response.ok) {
                         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
                     }
                     
-                    let data;
+                    const data = await response.json();
                     
-                    // GitHub API gibt base64-encoded content zurück
-                    if (url.includes('api.github.com')) {
-                        const apiData = await response.json();
-                        const decoded = atob(apiData.content);
-                        data = JSON.parse(decoded);
-                    } else {
-                        data = await response.json();
-                    }
-                    
-                    // VALIDIERUNG: Prüfe ob es eine gültige Tricks-Datenbank ist
+                    // VALIDIERUNG
                     if (!data.trick_database) {
                         throw new Error('Ungültige Datenstruktur: "trick_database" fehlt');
                     }
                     
-                    console.log(`✅ ERFOLG mit ${urlType}!`);
+                    console.log(`✅✅✅ ERFOLG mit ${urlType}!`);
                     console.log('📦 JSON erfolgreich geladen und validiert');
                     console.log('📊 Kategorien gefunden:', Object.keys(data.trick_database));
                     
@@ -2286,10 +2318,10 @@
                     console.warn(`⚠️ ${urlType} fehlgeschlagen:`, error.message);
                     lastError = error;
                     
-                    // Wenn GitHack, kurz warten (CDN braucht manchmal Zeit)
+                    // Bei GitHack URLs kurz warten
                     if (url.includes('githack') && i < urls.length - 1) {
-                        console.log('⏳ Warte 1 Sekunde für GitHack CDN...');
-                        await new Promise(resolve => setTimeout(resolve, 1000));
+                        console.log('⏳ Warte 1,5 Sekunden für GitHack CDN...');
+                        await new Promise(resolve => setTimeout(resolve, 1500));
                     }
                     
                     // Fahre mit nächster URL fort
@@ -2298,7 +2330,7 @@
             }
             
             // Alle Versuche fehlgeschlagen
-            console.error('❌ ALLE LADE-VERSUCHE FEHLGESCHLAGEN!');
+            console.error('❌❌❌ ALLE LADE-VERSUCHE FEHLGESCHLAGEN!');
             console.error('Letzter Fehler:', lastError);
             throw new Error(`Konnte JSON von keiner Quelle laden. Letzter Fehler: ${lastError?.message || 'Unbekannt'}`);
         }
