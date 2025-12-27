@@ -820,6 +820,73 @@
             display: none;
         }
 
+        /* === TTS (Text-to-Speech) BUTTONS === */
+        .tts-btn {
+            background: transparent;
+            border: 2px solid var(--border-color);
+            color: var(--text-primary);
+            border-radius: 8px;
+            padding: 8px 12px;
+            cursor: pointer;
+            font-size: 1.2rem;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 40px;
+            min-height: 40px;
+        }
+
+        .tts-btn:hover {
+            background: var(--primary-color);
+            border-color: var(--primary-color);
+            color: white;
+            transform: scale(1.05);
+        }
+
+        .tts-btn:active {
+            transform: scale(0.95);
+        }
+
+        .tts-btn.speaking {
+            background: var(--primary-color);
+            border-color: var(--primary-color);
+            color: white;
+            animation: pulse-tts 1.5s ease-in-out infinite;
+        }
+
+        @keyframes pulse-tts {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.7; transform: scale(1.05); }
+        }
+
+        .tts-btn-small {
+            padding: 6px 10px;
+            font-size: 1rem;
+            min-width: 36px;
+            min-height: 36px;
+        }
+
+        .tts-btn-inline {
+            margin-left: 8px;
+            vertical-align: middle;
+        }
+
+        @media (max-width: 768px) {
+            .tts-btn {
+                min-width: 36px;
+                min-height: 36px;
+                padding: 6px 10px;
+                font-size: 1.1rem;
+            }
+            .tts-btn-small {
+                min-width: 32px;
+                min-height: 32px;
+                padding: 4px 8px;
+                font-size: 0.95rem;
+            }
+        }
+
         .custom-badge {
             position: absolute;
             top: 12px;
@@ -1344,9 +1411,17 @@
                 </div>
 
                 <div class="progress-section">
-                    <div class="progress-label">
-                        <span>Dein Fortschritt</span>
-                        <span id="progressLabel">0% Komplett</span>
+                    <div class="progress-label" style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
+                        <div style="flex:1;">
+                            <span>Dein Fortschritt</span>
+                            <span id="progressLabel">0% Komplett</span>
+                        </div>
+                        <button class="tts-btn tts-btn-small" 
+                                onclick="speakProgress()"
+                                aria-label="Fortschritt vorlesen"
+                                title="Fortschritt vorlesen">
+                            🔊
+                        </button>
                     </div>
                     <div class="progress-track">
                         <div class="progress-fill" id="progressBar"></div>
@@ -1513,6 +1588,50 @@
                 <div class="divider"></div>
 
                 <div class="setting-group">
+                    <label class="setting-label">🔊 Sprachausgabe (Barrierefreiheit)</label>
+                    <p class="setting-description">Text-to-Speech für alle Inhalte</p>
+                    
+                    <div style="background:var(--bg-main); padding:12px; border-radius:8px; margin-bottom:12px;">
+                        <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+                            <input type="checkbox" id="ttsEnabledSetting" 
+                                   checked
+                                   onchange="localStorage.setItem(TTS_ENABLED_KEY, this.checked);">
+                            <span style="font-size:0.9rem;">Sprachausgabe aktivieren</span>
+                        </label>
+                    </div>
+                    
+                    <div style="margin-bottom:12px;">
+                        <label style="display:block; margin-bottom:4px; font-size:0.85rem; color:var(--text-secondary);">
+                            Geschwindigkeit: <span id="ttsRateValue">1.0</span>x
+                        </label>
+                        <input type="range" id="ttsRateSlider" 
+                               min="0.5" max="2.0" step="0.1" value="1.0"
+                               style="width:100%;"
+                               oninput="document.getElementById('ttsRateValue').textContent = this.value; localStorage.setItem(TTS_RATE_KEY, this.value);">
+                    </div>
+                    
+                    <div style="margin-bottom:12px;">
+                        <label style="display:block; margin-bottom:4px; font-size:0.85rem; color:var(--text-secondary);">
+                            Lautstärke: <span id="ttsVolumeValue">100</span>%
+                        </label>
+                        <input type="range" id="ttsVolumeSlider" 
+                               min="0" max="1" step="0.1" value="1"
+                               style="width:100%;"
+                               oninput="document.getElementById('ttsVolumeValue').textContent = Math.round(this.value * 100); localStorage.setItem(TTS_VOLUME_KEY, this.value);">
+                    </div>
+                    
+                    <button class="btn btn-accent btn-full" onclick="testTTS()" style="margin-top:8px;">
+                        🔊 Sprachausgabe testen
+                    </button>
+                    
+                    <p style="margin-top:12px; font-size:0.75rem; color:var(--text-secondary);">
+                        💡 <strong>Tipp:</strong> Drücken Sie ESC um die Sprachausgabe jederzeit zu stoppen.
+                    </p>
+                </div>
+
+                <div class="divider"></div>
+
+                <div class="setting-group">
                     <label class="setting-label">🗑️ Daten zurücksetzen</label>
                     <p class="setting-description">Achtung: Löscht alle eigenen Tricks und den Fortschritt!</p>
                     <button class="btn btn-secondary btn-full" onclick="resetAllData()">
@@ -1594,12 +1713,20 @@
         const AUTO_LOAD_BACKUP_KEY = 'dogTricksAutoLoadBackup';
         const AUTO_LOAD_LOCAL_JSON_KEY = 'dogTricksAutoLoadLocalJson';
         const LAST_BACKUP_DATE_KEY = 'dogTricksLastBackupDate';
+        const TTS_ENABLED_KEY = 'dogTricksTTSEnabled';
+        const TTS_RATE_KEY = 'dogTricksTTSRate';
+        const TTS_PITCH_KEY = 'dogTricksTTSPitch';
+        const TTS_VOLUME_KEY = 'dogTricksTTSVolume';
+        const TTS_VOICE_KEY = 'dogTricksTTSVoice';
         
         let learnedTricks = new Set();
         let totalTricks = 0;
         let currentData = null;
         let customTricks = [];
         let backupFileHandle = null; // Für File System Access API
+        let tricksMap = new Map(); // Speichert Trick-Objekte für TTS-Zugriff
+        let currentSpeech = null; // Aktueller TTS-Vorgang
+        let isSpeaking = false; // TTS aktiv?
 
         // === DARK MODE ===
         function toggleDarkMode() {
@@ -1718,10 +1845,40 @@
                 header.className = 'nav-category-header';
                 header.style.borderLeftColor = color;
                 header.style.borderLeftWidth = '4px';
-                header.innerHTML = `
-                    <span>${cleanCategoryName(cat.meta.category_name)} (${cat.list.length})</span>
-                    <span class="nav-arrow">▼</span>
-                `;
+                header.style.display = 'flex';
+                header.style.alignItems = 'center';
+                header.style.justifyContent = 'space-between';
+                header.style.gap = '8px';
+                
+                const titleSpan = document.createElement('span');
+                titleSpan.textContent = `${cleanCategoryName(cat.meta.category_name)} (${cat.list.length})`;
+                titleSpan.style.flex = '1';
+                
+                const buttonsDiv = document.createElement('div');
+                buttonsDiv.style.display = 'flex';
+                buttonsDiv.style.alignItems = 'center';
+                buttonsDiv.style.gap = '8px';
+                
+                // TTS-Button für alle Tricks
+                const ttsCatBtn = document.createElement('button');
+                ttsCatBtn.className = 'tts-btn tts-btn-small';
+                ttsCatBtn.innerHTML = '🔊';
+                ttsCatBtn.setAttribute('aria-label', 'Alle Tricks vorlesen');
+                ttsCatBtn.setAttribute('title', 'Alle Tricks dieser Kategorie vorlesen');
+                ttsCatBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    speakAllTricksInCategory(cat.list, cleanCategoryName(cat.meta.category_name), ttsCatBtn);
+                };
+                
+                const arrow = document.createElement('span');
+                arrow.className = 'nav-arrow';
+                arrow.textContent = '▼';
+                
+                buttonsDiv.appendChild(ttsCatBtn);
+                buttonsDiv.appendChild(arrow);
+                
+                header.appendChild(titleSpan);
+                header.appendChild(buttonsDiv);
                 
                 const tricksContainer = document.createElement('div');
                 tricksContainer.className = 'nav-tricks';
@@ -1730,20 +1887,58 @@
                     const trickItem = document.createElement('div');
                     trickItem.className = 'nav-trick-item';
                     trickItem.style.setProperty('--category-color', color);
-                    trickItem.innerHTML = `
-                        <span class="nav-trick-title">${trick.titel}</span>
-                        <span class="nav-trick-id">#${trick.position || trick.id}</span>
-                    `;
                     
-                    trickItem.onclick = () => {
-                        scrollToTrick(trick.id);
-                        closeBurgerMenu();
+                    // Erstelle TTS-Button
+                    const ttsBtn = document.createElement('button');
+                    ttsBtn.className = 'tts-btn tts-btn-small';
+                    ttsBtn.innerHTML = '🔊';
+                    ttsBtn.setAttribute('aria-label', 'Trick vorlesen');
+                    ttsBtn.setAttribute('title', 'Trick vorlesen');
+                    ttsBtn.style.marginLeft = '8px';
+                    ttsBtn.onclick = (e) => {
+                        e.stopPropagation();
+                        speakTrickCard(trick, cleanCategoryName(cat.meta.category_name), ttsBtn);
+                    };
+                    
+                    // Erstelle Content-Wrapper
+                    const titleWrapper = document.createElement('div');
+                    titleWrapper.style.display = 'flex';
+                    titleWrapper.style.alignItems = 'center';
+                    titleWrapper.style.justifyContent = 'space-between';
+                    titleWrapper.style.flex = '1';
+                    titleWrapper.style.gap = '8px';
+                    
+                    const titleSpan = document.createElement('span');
+                    titleSpan.className = 'nav-trick-title';
+                    titleSpan.textContent = trick.titel;
+                    titleSpan.style.flex = '1';
+                    titleSpan.style.minWidth = '0';
+                    
+                    const idSpan = document.createElement('span');
+                    idSpan.className = 'nav-trick-id';
+                    idSpan.textContent = `#${trick.position || trick.id}`;
+                    
+                    titleWrapper.appendChild(titleSpan);
+                    titleWrapper.appendChild(idSpan);
+                    
+                    trickItem.appendChild(titleWrapper);
+                    trickItem.appendChild(ttsBtn);
+                    
+                    trickItem.onclick = (e) => {
+                        if (e.target !== ttsBtn && !ttsBtn.contains(e.target)) {
+                            scrollToTrick(trick.id);
+                            closeBurgerMenu();
+                        }
                     };
                     
                     tricksContainer.appendChild(trickItem);
                 });
                 
-                header.onclick = () => {
+                header.onclick = (e) => {
+                    // Nicht togglen wenn TTS-Button geklickt wurde
+                    if (e.target === ttsCatBtn || ttsCatBtn.contains(e.target)) {
+                        return;
+                    }
                     header.classList.toggle('active');
                     tricksContainer.classList.toggle('open');
                 };
@@ -1790,6 +1985,7 @@
         // === MODAL FUNCTIONS ===
         function openSettings() {
             document.getElementById('settingsModal').classList.add('show');
+            initTTSSettings(); // Lade TTS-Einstellungen
         }
 
         function closeSettings() {
@@ -2171,12 +2367,399 @@
         }
 
         // App-Start
+        // ============================================================
+        // TEXT-TO-SPEECH (TTS) BARRIEREFREIHEIT-SYSTEM
+        // ============================================================
+
+        function initTTS() {
+            // ESC-Taste zum Stoppen
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && isSpeaking) {
+                    stopSpeech();
+                }
+            });
+
+            // Lade Einstellungen
+            const ttsEnabled = localStorage.getItem(TTS_ENABLED_KEY);
+            if (ttsEnabled === null) {
+                localStorage.setItem(TTS_ENABLED_KEY, 'true'); // Default: aktiviert
+            }
+
+            console.log('🔊 TTS-System initialisiert');
+        }
+
+        function getTTSSettings() {
+            return {
+                enabled: localStorage.getItem(TTS_ENABLED_KEY) !== 'false',
+                rate: parseFloat(localStorage.getItem(TTS_RATE_KEY) || '1.0'),
+                pitch: parseFloat(localStorage.getItem(TTS_PITCH_KEY) || '1.0'),
+                volume: parseFloat(localStorage.getItem(TTS_VOLUME_KEY) || '1.0'),
+                voiceName: localStorage.getItem(TTS_VOICE_KEY) || null
+            };
+        }
+
+        function speak(text, buttonElement = null) {
+            if (!text || text.trim() === '') {
+                console.warn('Kein Text zum Vorlesen');
+                return;
+            }
+
+            const settings = getTTSSettings();
+            
+            if (!settings.enabled) {
+                console.log('TTS ist deaktiviert');
+                return;
+            }
+
+            // Web Speech API Unterstützung prüfen
+            if (!('speechSynthesis' in window)) {
+                alert('⚠️ Ihr Browser unterstützt keine Sprachausgabe.\n\nBitte verwenden Sie einen modernen Browser wie Chrome, Edge oder Safari.');
+                return;
+            }
+
+            // Stoppe vorherige Sprachausgabe
+            stopSpeech();
+
+            // Bereinige Text
+            const cleanText = text
+                .replace(/<[^>]*>/g, '') // HTML-Tags entfernen
+                .replace(/\s+/g, ' ') // Mehrfache Leerzeichen
+                .trim();
+
+            if (!cleanText) {
+                console.warn('Kein Text nach Bereinigung');
+                return;
+            }
+
+            console.log('🔊 Spreche:', cleanText.substring(0, 50) + '...');
+
+            // Erstelle Sprachausgabe
+            const utterance = new SpeechSynthesisUtterance(cleanText);
+            utterance.lang = 'de-DE';
+            utterance.rate = settings.rate;
+            utterance.pitch = settings.pitch;
+            utterance.volume = settings.volume;
+
+            // Deutsche Stimme bevorzugen
+            const voices = speechSynthesis.getVoices();
+            if (settings.voiceName) {
+                const savedVoice = voices.find(v => v.name === settings.voiceName);
+                if (savedVoice) {
+                    utterance.voice = savedVoice;
+                }
+            } else {
+                // Automatisch beste deutsche Stimme wählen
+                const germanVoice = voices.find(v => v.lang.startsWith('de')) ||
+                                   voices.find(v => v.lang === 'de-DE') ||
+                                   voices[0];
+                if (germanVoice) {
+                    utterance.voice = germanVoice;
+                }
+            }
+
+            // Event-Handler
+            utterance.onstart = () => {
+                isSpeaking = true;
+                if (buttonElement) {
+                    buttonElement.classList.add('speaking');
+                    buttonElement.setAttribute('aria-label', 'Vorlesen stoppen');
+                }
+                console.log('🔊 Sprachausgabe gestartet');
+            };
+
+            utterance.onend = () => {
+                isSpeaking = false;
+                currentSpeech = null;
+                if (buttonElement) {
+                    buttonElement.classList.remove('speaking');
+                    buttonElement.setAttribute('aria-label', 'Text vorlesen');
+                }
+                console.log('✅ Sprachausgabe beendet');
+            };
+
+            utterance.onerror = (event) => {
+                console.error('❌ TTS Fehler:', event.error);
+                isSpeaking = false;
+                currentSpeech = null;
+                if (buttonElement) {
+                    buttonElement.classList.remove('speaking');
+                }
+                
+                if (event.error !== 'interrupted' && event.error !== 'canceled') {
+                    // Benutzerfreundliche Fehlermeldungen
+                    let errorMsg = '';
+                    switch(event.error) {
+                        case 'synthesis-failed':
+                            errorMsg = 'Die Sprachausgabe konnte nicht gestartet werden.\n\nMögliche Ursachen:\n• Der Text ist zu lang\n• Keine Internetverbindung (bei manchen Browsern)\n• Browser-Einschränkung\n\nVersuchen Sie:\n• Einzelne Tricks statt alle auf einmal vorlesen\n• Browser neu laden';
+                            break;
+                        case 'network':
+                            errorMsg = 'Keine Internetverbindung für die Sprachausgabe.\n\nEinige Browser benötigen Internet für TTS.';
+                            break;
+                        case 'synthesis-unavailable':
+                            errorMsg = 'Sprachausgabe nicht verfügbar.\n\nBitte verwenden Sie Chrome, Edge oder Safari.';
+                            break;
+                        case 'audio-busy':
+                            errorMsg = 'Audio-System ist beschäftigt.\n\nBitte warten Sie einen Moment und versuchen Sie es erneut.';
+                            break;
+                        default:
+                            errorMsg = `Unbekannter Fehler: ${event.error}`;
+                    }
+                    alert('⚠️ Fehler bei der Sprachausgabe\n\n' + errorMsg);
+                }
+            };
+
+            // Speichere und starte
+            currentSpeech = utterance;
+            speechSynthesis.speak(utterance);
+        }
+
+        function stopSpeech() {
+            if (isSpeaking && speechSynthesis.speaking) {
+                speechSynthesis.cancel();
+                isSpeaking = false;
+                currentSpeech = null;
+                
+                // Entferne alle speaking-Klassen
+                document.querySelectorAll('.tts-btn.speaking').forEach(btn => {
+                    btn.classList.remove('speaking');
+                    btn.setAttribute('aria-label', 'Text vorlesen');
+                });
+                
+                console.log('⏹️ Sprachausgabe gestoppt');
+            }
+        }
+
+        function toggleSpeech(text, buttonElement) {
+            if (isSpeaking && buttonElement && buttonElement.classList.contains('speaking')) {
+                stopSpeech();
+            } else {
+                speak(text, buttonElement);
+            }
+        }
+
+        function createTTSButton(text, className = '', ariaLabel = 'Text vorlesen') {
+            const btn = document.createElement('button');
+            btn.className = `tts-btn ${className}`;
+            btn.innerHTML = '🔊';
+            btn.setAttribute('aria-label', ariaLabel);
+            btn.setAttribute('title', ariaLabel);
+            btn.onclick = (e) => {
+                e.stopPropagation();
+                toggleSpeech(text, btn);
+            };
+            return btn;
+        }
+
+        function speakTrickCard(trick, categoryName, buttonElement) {
+            let text = `${trick.name || trick.titel}. Kategorie: ${categoryName}. `;
+            
+            // Handzeichen
+            if (trick.handzeichen_kurz || trick.handzeichen) {
+                text += `Handzeichen: ${trick.handzeichen_kurz || ''}. `;
+                if (trick.handzeichen && trick.handzeichen !== trick.handzeichen_kurz) {
+                    text += `${trick.handzeichen}. `;
+                }
+            }
+            
+            // Bewegungsablauf
+            if (trick.bewegungsablauf_kurz || trick.bewegungsablauf) {
+                text += `Bewegungsablauf: ${trick.bewegungsablauf_kurz || ''}. `;
+                if (trick.bewegungsablauf && trick.bewegungsablauf !== trick.bewegungsablauf_kurz) {
+                    text += `${trick.bewegungsablauf}. `;
+                }
+            }
+            
+            // Endposition
+            if (trick.endposition_kurz || trick.endposition) {
+                text += `Endposition: ${trick.endposition_kurz || ''}. `;
+                if (trick.endposition && trick.endposition !== trick.endposition_kurz) {
+                    text += `${trick.endposition}. `;
+                }
+            }
+            
+            // Trainingstipps
+            if (trick.trainingstipps_kurz || trick.trainingstipps) {
+                text += `Trainingstipps: ${trick.trainingstipps_kurz || ''}. `;
+                if (trick.trainingstipps && trick.trainingstipps !== trick.trainingstipps_kurz) {
+                    text += `${trick.trainingstipps}. `;
+                }
+            }
+            
+            // Steigerungen/Varianten
+            if (trick.steigerung) {
+                const variantKeys = Object.keys(trick.steigerung).filter(k => k.startsWith('variante_') && !k.endsWith('_kurz')).sort();
+                if (variantKeys.length > 0) {
+                    text += `Steigerungen: `;
+                    variantKeys.forEach((key, index) => {
+                        const num = key.split('_')[1];
+                        const shortKey = key + "_kurz";
+                        const shortText = trick.steigerung[shortKey];
+                        const longText = trick.steigerung[key];
+                        
+                        text += `Stufe ${num}: ${shortText || ''}. `;
+                        if (longText && longText !== shortText) {
+                            text += `${longText}. `;
+                        }
+                    });
+                }
+            }
+            
+            toggleSpeech(text, buttonElement);
+        }
+
+        function speakAllTricksInCategory(tricks, categoryName, buttonElement) {
+            if (!tricks || tricks.length === 0) {
+                speak('Keine Tricks in dieser Kategorie.', buttonElement);
+                return;
+            }
+            
+            // TOGGLE: Wenn bereits am Sprechen, dann stoppen
+            if (isSpeaking && buttonElement && buttonElement.classList.contains('speaking')) {
+                stopSpeech();
+                return;
+            }
+            
+            // NEUE STRATEGIE: Sequenzielles Vorlesen statt alles auf einmal
+            // Dies verhindert "synthesis-failed" bei langen Texten
+            
+            let currentIndex = 0;
+            
+            function speakNextTrick() {
+                // Prüfe ob User gestoppt hat
+                if (!isSpeaking) {
+                    console.log('⏹️ Sequenzielle Wiedergabe gestoppt');
+                    return;
+                }
+                
+                if (currentIndex >= tricks.length) {
+                    // Alle Tricks vorgelesen
+                    if (buttonElement) {
+                        buttonElement.classList.remove('speaking');
+                        buttonElement.setAttribute('aria-label', 'Alle Tricks vorlesen');
+                    }
+                    isSpeaking = false;
+                    currentSpeech = null;
+                    console.log('✅ Alle Tricks der Kategorie vorgelesen');
+                    return;
+                }
+                
+                const trick = tricks[currentIndex];
+                let text = '';
+                
+                // Erste Ansage
+                if (currentIndex === 0) {
+                    text = `Kategorie ${categoryName}. ${tricks.length} Tricks. `;
+                }
+                
+                // Trick-Info (kompakt!)
+                text += `Trick ${currentIndex + 1}: ${trick.titel || trick.name}. `;
+                
+                // Nur EINE Kurzbeschreibung (die erste verfügbare)
+                if (trick.handzeichen_kurz) {
+                    text += `${trick.handzeichen_kurz}. `;
+                } else if (trick.bewegungsablauf_kurz) {
+                    text += `${trick.bewegungsablauf_kurz}. `;
+                }
+                
+                // Vorlesen
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'de-DE';
+                const settings = getTTSSettings();
+                utterance.rate = settings.rate;
+                utterance.pitch = settings.pitch;
+                utterance.volume = settings.volume;
+                
+                // Deutsche Stimme
+                const voices = speechSynthesis.getVoices();
+                const germanVoice = voices.find(v => v.lang.startsWith('de'));
+                if (germanVoice) utterance.voice = germanVoice;
+                
+                utterance.onend = () => {
+                    currentIndex++;
+                    // Kleine Pause zwischen Tricks (300ms)
+                    setTimeout(() => speakNextTrick(), 300);
+                };
+                
+                utterance.onerror = (event) => {
+                    console.error('TTS Fehler bei Trick:', trick.titel, event.error);
+                    
+                    // Bei Fehler: Stoppen und Fehlermeldung
+                    if (buttonElement) {
+                        buttonElement.classList.remove('speaking');
+                    }
+                    isSpeaking = false;
+                    currentSpeech = null;
+                    
+                    if (event.error !== 'interrupted' && event.error !== 'canceled') {
+                        let errorMsg = `Fehler beim Vorlesen von "${trick.titel}"`;
+                        if (event.error === 'synthesis-failed') {
+                            errorMsg += '\n\nDie Wiedergabe wurde gestoppt.\nVersuchen Sie einzelne Tricks vorzulesen.';
+                        }
+                        alert('⚠️ ' + errorMsg);
+                    }
+                };
+                
+                currentSpeech = utterance;
+                speechSynthesis.speak(utterance);
+            }
+            
+            // Markiere Button als aktiv
+            if (buttonElement) {
+                buttonElement.classList.add('speaking');
+                buttonElement.setAttribute('aria-label', 'Vorlesen stoppen');
+            }
+            isSpeaking = true;
+            
+            // Starte sequenzielle Wiedergabe
+            speakNextTrick();
+        }
+
+        function speakTrickById(trickId, categoryName, buttonElement) {
+            const trick = tricksMap.get(trickId);
+            if (!trick) {
+                console.error('Trick nicht gefunden:', trickId);
+                speak('Trick nicht gefunden.', buttonElement);
+                return;
+            }
+            speakTrickCard(trick, categoryName, buttonElement);
+        }
+
+        function speakTrickDescription(description, buttonElement) {
+            const text = `Ausführliche Beschreibung: ${description}`;
+            toggleSpeech(text, buttonElement);
+        }
+
+        function speakProgress() {
+            const learned = learnedTricks.size;
+            const total = totalTricks;
+            const percent = total > 0 ? Math.round((learned / total) * 100) : 0;
+            const text = `Fortschritt: ${learned} von ${total} Tricks gelernt. Das sind ${percent} Prozent.`;
+            speak(text);
+        }
+
+        // Stimmen laden (wichtig für Chrome/Edge)
+        function loadVoices() {
+            return new Promise((resolve) => {
+                let voices = speechSynthesis.getVoices();
+                if (voices.length > 0) {
+                    resolve(voices);
+                } else {
+                    speechSynthesis.onvoiceschanged = () => {
+                        voices = speechSynthesis.getVoices();
+                        resolve(voices);
+                    };
+                }
+            });
+        }
+
         window.onload = async function() {
             console.log('🎯 APP STARTET - Window.onload');
             
             // Initialisierungen
             initDarkMode();
             initHeaderState();
+            initTTS();
+            await loadVoices(); // Stimmen laden
             loadStorage();
             loadCustomTricks();
             
@@ -2450,6 +3033,9 @@
         function renderApp(data) {
             const container = document.getElementById('tricksContainer');
             container.innerHTML = '';
+            
+            // Leere tricksMap für TTS-Zugriff
+            tricksMap.clear();
 
             // VALIDIERUNG: Prüfe ob gültige Daten vorhanden sind
             if (!data || !data.trick_database) {
@@ -2513,10 +3099,19 @@
 
                 const header = document.createElement('div');
                 header.className = 'cat-header active';
+                const categoryText = cleanCategoryName(meta.category_name);
                 header.innerHTML = `
-                    <div class="cat-title">
-                        <span>${cleanCategoryName(meta.category_name)}</span>
-                        <span class="cat-count" style="background: ${themeColor}20; color: ${themeColor};">${cat.list.length}</span>
+                    <div class="cat-title" style="display:flex; align-items:center; gap:8px; flex:1;">
+                        <div style="flex:1;">
+                            <span>${categoryText}</span>
+                            <span class="cat-count" style="background: ${themeColor}20; color: ${themeColor};">${cat.list.length}</span>
+                        </div>
+                        <button class="tts-btn tts-btn-small" 
+                                onclick="speak('Kategorie ${categoryText.replace(/'/g, "\\'")}. ${cat.list.length} Tricks.'); event.stopPropagation();"
+                                aria-label="Kategorie vorlesen"
+                                title="Kategorie vorlesen">
+                            🔊
+                        </button>
                     </div>
                     <span class="arrow" style="color: ${themeColor};">▼</span>
                 `;
@@ -2530,7 +3125,9 @@
                 };
 
                 cat.list.forEach(trick => {
-                    body.appendChild(createTrickCard(trick, themeColor));
+                    // Speichere Trick in Map für TTS-Zugriff
+                    tricksMap.set(trick.id, trick);
+                    body.appendChild(createTrickCard(trick, themeColor, categoryText));
                 });
 
                 wrapper.appendChild(header);
@@ -2542,7 +3139,7 @@
             generateNavigation(data);
         }
 
-        function createTrickCard(trick, color) {
+        function createTrickCard(trick, color, categoryName = '') {
             const isLearned = learnedTricks.has(trick.id);
             const card = document.createElement('div');
             card.className = `trick-card ${isLearned ? 'learned' : ''}`;
@@ -2564,9 +3161,17 @@
             }
             
             contentHTML += `
-                <div class="card-top">
-                    <h3 class="trick-title">${trick.titel}</h3>
-                    <span class="trick-id">#${trick.position || trick.id}</span>
+                <div class="card-top" style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
+                    <div style="flex:1; min-width:0;">
+                        <h3 class="trick-title">${trick.titel}</h3>
+                        <span class="trick-id">#${trick.position || trick.id}</span>
+                    </div>
+                    <button class="tts-btn tts-btn-small" 
+                            onclick="speakTrickById('${trick.id}', '${categoryName}', this); event.stopPropagation();"
+                            aria-label="Kompletten Trick vorlesen"
+                            title="Kompletten Trick vorlesen">
+                        🔊
+                    </button>
                 </div>
             `;
 
@@ -2627,6 +3232,7 @@
             
             // Beide Texte vorhanden - zeige Kurztext mit Button für Langtext
             if(cleanShort && cleanLong) {
+                const escapedLong = cleanLong.replace(/'/g, "\\'").replace(/"/g, '&quot;');
                 return `
                     <div class="info-block">
                         <div class="block-label">
@@ -2634,7 +3240,16 @@
                             ${label}
                         </div>
                         <div class="text-short">${cleanShort}</div>
-                        <div id="long-${uid}" class="text-long">${cleanLong}</div>
+                        <div id="long-${uid}" class="text-long">
+                            ${cleanLong}
+                            <button class="tts-btn tts-btn-small tts-btn-inline" 
+                                    onclick="speakTrickDescription('${escapedLong}', this); event.stopPropagation();"
+                                    aria-label="Beschreibung vorlesen"
+                                    title="Beschreibung vorlesen"
+                                    style="margin-top:8px;">
+                                🔊 Vorlesen
+                            </button>
+                        </div>
                         <button class="toggle-btn" style="background: ${color}15; border-color: ${color}30; color: ${color};" onclick="toggleText('${uid}', this)">
                             ▼ Mehr erfahren
                         </button>
@@ -3205,6 +3820,36 @@
 
         function closeAllDialogs() {
             document.querySelectorAll('.modal-overlay').forEach(d => d.remove());
+        }
+
+        function testTTS() {
+            const text = "Hallo! Dies ist ein Test der Sprachausgabe. Die Vorlesefunktion ist aktiviert und funktioniert einwandfrei.";
+            speak(text);
+        }
+
+        function initTTSSettings() {
+            const settings = getTTSSettings();
+            
+            // Checkboxen
+            const enabledCheckbox = document.getElementById('ttsEnabledSetting');
+            if (enabledCheckbox) {
+                enabledCheckbox.checked = settings.enabled;
+            }
+            
+            // Slider
+            const rateSlider = document.getElementById('ttsRateSlider');
+            const rateValue = document.getElementById('ttsRateValue');
+            if (rateSlider && rateValue) {
+                rateSlider.value = settings.rate;
+                rateValue.textContent = settings.rate;
+            }
+            
+            const volumeSlider = document.getElementById('ttsVolumeSlider');
+            const volumeValue = document.getElementById('ttsVolumeValue');
+            if (volumeSlider && volumeValue) {
+                volumeSlider.value = settings.volume;
+                volumeValue.textContent = Math.round(settings.volume * 100);
+            }
         }
     </script>
 </body>
