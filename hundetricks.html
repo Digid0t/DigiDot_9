@@ -801,8 +801,9 @@
         }
 
         .trick-card.learned {
-            opacity: 0.65;
-            background: var(--bg-main);
+            opacity: 0.75;
+            background: #e8e8e8; /* Deutlich grauer Hintergrund im Light Mode */
+            border-color: #d0d0d0;
         }
 
         [data-theme="dark"] .trick-card.learned {
@@ -1415,11 +1416,11 @@
                             </label>
                         </div>
                         
-                        <a href="https://raw.githubusercontent.com/Digid0t/DigiDot_9/main/Hundetricks.json" 
-                           download="Hundetricks.json" 
+                        <a href="https://github.com/Digid0t/DigiDot_9/archive/refs/heads/main.zip" 
+                           download 
                            class="btn btn-secondary btn-full" 
                            style="text-decoration:none; display:flex;">
-                            💾 Download
+                            📦 ZIP Download
                         </a>
                     </div>
                     
@@ -1441,8 +1442,45 @@
                 <div class="divider"></div>
 
                 <div class="setting-group">
-                    <label class="setting-label">💾 Daten sichern & laden</label>
-                    <p class="setting-description">Speichere deinen Fortschritt und eigene Tricks</p>
+                    <label class="setting-label">📦 Backup-System</label>
+                    <p class="setting-description">Sichere ALLE Daten: Fortschritt, eigene Tricks & Datenbank</p>
+                    
+                    <button class="btn btn-primary btn-full" onclick="createBackupEnhanced()" style="margin-bottom:10px;">
+                        💾 Vollständiges Backup erstellen
+                    </button>
+                    
+                    <button class="btn btn-success btn-full" onclick="loadBackupManual()" style="margin-bottom:16px;">
+                        📂 Backup laden
+                    </button>
+                    
+                    <div style="background:var(--bg-main); padding:12px; border-radius:8px; margin-bottom:12px;">
+                        <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+                            <input type="checkbox" id="autoLoadBackupSetting"
+                                   onchange="localStorage.setItem(AUTO_LOAD_BACKUP_KEY, this.checked); console.log('Auto-Load Backup:', this.checked);">
+                            <span style="font-size:0.9rem;">Backup-Dialog überspringen</span>
+                        </label>
+                        <p style="margin:8px 0 0 24px; font-size:0.75rem; color:var(--text-secondary);">
+                            Wenn aktiviert: Backup-Dialog wird nicht gezeigt, stattdessen wird online geladen
+                        </p>
+                    </div>
+                    
+                    <div style="background:var(--bg-main); padding:12px; border-radius:8px;">
+                        <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+                            <input type="checkbox" id="autoLoadLocalSetting"
+                                   onchange="localStorage.setItem(AUTO_LOAD_LOCAL_JSON_KEY, this.checked); console.log('Auto-Load Local:', this.checked);">
+                            <span style="font-size:0.9rem;">Lokale JSON bevorzugen (Offline-Modus)</span>
+                        </label>
+                        <p style="margin:8px 0 0 24px; font-size:0.75rem; color:var(--text-secondary);">
+                            Wenn aktiviert: Datei-Auswahl-Dialog wird beim Start gezeigt
+                        </p>
+                    </div>
+                </div>
+
+                <div class="divider"></div>
+                
+                <div class="setting-group">
+                    <label class="setting-label">💾 Alte Daten-Funktionen</label>
+                    <p class="setting-description">Nur Fortschritt & eigene Tricks (ohne Datenbank)</p>
                     
                     <div class="button-grid button-grid-2">
                         <button class="btn btn-success btn-full" onclick="exportData()">
@@ -1552,11 +1590,16 @@
         const FULL_DATA_KEY = 'dogTricksFullData';
         const JSON_URL_KEY = 'dogTricksJsonUrl';
         const DARK_MODE_KEY = 'dogTricksDarkMode';
+        const BACKUP_EXISTS_KEY = 'dogTricksBackupExists';
+        const AUTO_LOAD_BACKUP_KEY = 'dogTricksAutoLoadBackup';
+        const AUTO_LOAD_LOCAL_JSON_KEY = 'dogTricksAutoLoadLocalJson';
+        const LAST_BACKUP_DATE_KEY = 'dogTricksLastBackupDate';
         
         let learnedTricks = new Set();
         let totalTricks = 0;
         let currentData = null;
         let customTricks = [];
+        let backupFileHandle = null; // Für File System Access API
 
         // === DARK MODE ===
         function toggleDarkMode() {
@@ -2128,28 +2171,47 @@
         }
 
         // App-Start
-        window.onload = function() {
+        window.onload = async function() {
+            console.log('🎯 APP STARTET - Window.onload');
+            
+            // Initialisierungen
             initDarkMode();
             initHeaderState();
             loadStorage();
             loadCustomTricks();
             
-            // IMMER versuchen, frische Daten zu laden
-            // Bei Fehler: Fallback auf gespeicherte Daten
+            // Lade Checkbox-Einstellungen
+            const autoLoadBackup = localStorage.getItem(AUTO_LOAD_BACKUP_KEY) === 'true';
+            const autoLoadLocal = localStorage.getItem(AUTO_LOAD_LOCAL_JSON_KEY) === 'true';
+            
+            // Setze Checkbox-Status in Einstellungen
+            setTimeout(() => {
+                if (document.getElementById('autoLoadBackupSetting')) {
+                    document.getElementById('autoLoadBackupSetting').checked = autoLoadBackup;
+                }
+                if (document.getElementById('autoLoadLocalSetting')) {
+                    document.getElementById('autoLoadLocalSetting').checked = autoLoadLocal;
+                }
+            }, 100);
+            
+            // Prüfe ob Daten im Cache sind
             const savedData = localStorage.getItem(FULL_DATA_KEY);
             
-            // Versuche frisch zu laden
-            loadJSON().catch(error => {
-                console.log('Fehler beim Laden, versuche gespeicherte Daten...', error);
+            // Starte intelligente Lade-Hierarchie
+            try {
+                await smartLoadData();
+            } catch (error) {
+                console.log('Smart-Load fehlgeschlagen, versuche Fallback...', error);
                 
+                // Fallback: Gespeicherte Daten
                 if (savedData) {
                     try {
                         currentData = JSON.parse(savedData);
                         mergeCustomTricks();
                         renderApp(currentData);
-                        console.log('✅ Gespeicherte Daten erfolgreich geladen (Offline-Modus)');
+                        console.log('✅ Gespeicherte Daten als Fallback geladen (Offline-Modus)');
                         
-                        // Zeige subtile Info, dass offline gearbeitet wird
+                        // Zeige Offline-Banner
                         setTimeout(() => {
                             const container = document.getElementById('tricksContainer');
                             if (container && container.children.length > 0) {
@@ -2161,13 +2223,14 @@
                         }, 100);
                     } catch (err) {
                         console.error('Auch gespeicherte Daten sind korrupt:', err);
-                        showLoadError(error.message);
+                        showFirstTimeSetupDialog();
                     }
                 } else {
-                    // Keine cached Daten verfügbar, zeige Fehler
-                    showLoadError(error.message);
+                    // Keine Daten vorhanden
+                    console.warn('Keine Daten verfügbar - zeige Setup');
+                    showFirstTimeSetupDialog();
                 }
-            });
+            }
         };
 
         function loadCustomTricks() {
@@ -2346,13 +2409,13 @@
                         
                         <div style="margin-bottom:20px; padding:16px; background:var(--bg-main); border-radius:8px;">
                             <p style="margin:0 0 8px 0; font-weight:600;">Methode 1: Download & Upload (Empfohlen)</p>
-                            <a href="https://raw.githack.com/Digid0t/DigiDot_9/main/Hundetricks.json" 
-                               download="Hundetricks.json" 
+                            <a href="https://github.com/Digid0t/DigiDot_9/archive/refs/heads/main.zip" 
+                               download 
                                style="display:inline-block; background:var(--gradient-success); color:white; padding:12px 24px; border-radius:8px; text-decoration:none; margin-top:8px; font-weight:600;">
-                                📥 Hundetricks.json herunterladen
+                                📦 Repository als ZIP herunterladen
                             </a>
                             <p style="margin:8px 0 0 0; font-size:0.85rem; color:var(--text-secondary);">
-                                Nach dem Download: Klicken Sie oben auf <strong>⚙️ Einstellungen</strong> → <strong>"📁 Datei vom Gerät laden"</strong> und wählen Sie die heruntergeladene Datei aus.
+                                Nach dem Download: Entpacken Sie das ZIP-Archiv und klicken Sie auf <strong>⚙️ Einstellungen</strong> → <strong>"📁 Datei vom Gerät laden"</strong> und wählen Sie die Hundetricks.json aus.
                             </p>
                         </div>
                         
@@ -2771,6 +2834,377 @@
         function loadStorage() {
             const raw = localStorage.getItem(STORAGE_KEY);
             if(raw) learnedTricks = new Set(JSON.parse(raw));
+        }
+
+        // ============================================================
+        // UMFASSENDES BACKUP & LADE-SYSTEM
+        // ============================================================
+
+        // Hauptfunktion: Intelligente Lade-Hierarchie
+        async function smartLoadData() {
+            console.log('🚀 STARTE INTELLIGENTE LADE-HIERARCHIE');
+            
+            // PRIORITÄT 1: Backup-JSON prüfen
+            const backupExists = localStorage.getItem(BACKUP_EXISTS_KEY) === 'true';
+            const autoLoadBackup = localStorage.getItem(AUTO_LOAD_BACKUP_KEY) === 'true';
+            
+            // Wenn Backup existiert ABER User will Dialog ÜBERSPRINGEN
+            if (backupExists && autoLoadBackup) {
+                console.log('📦 Backup vorhanden & Auto-Load aktiviert - überspringe Dialog, gehe zu Online-Laden');
+                // NICHT den Dialog zeigen, sondern direkt zu Online-Laden gehen
+            }
+            // Wenn Backup existiert und User WILL den Dialog sehen
+            else if (backupExists && !autoLoadBackup) {
+                console.log('📦 Backup vorhanden aber Auto-Load deaktiviert - zeige Dialog');
+                showBackupLoadDialog();
+                return;
+            }
+            
+            // PRIORITÄT 2: Lokale Original-JSON (wenn aktiviert)
+            const autoLoadLocal = localStorage.getItem(AUTO_LOAD_LOCAL_JSON_KEY) === 'true';
+            
+            if (autoLoadLocal) {
+                console.log('💾 Lokale JSON-Laden aktiviert - zeige Dialog');
+                showOriginalJsonDialog();
+                return;
+            }
+            
+            // PRIORITÄT 3: Online von GitHub laden
+            console.log('🌐 Versuche Online-Laden von GitHub');
+            try {
+                await loadJSON();
+                return;
+            } catch (error) {
+                console.error('❌ Online-Laden fehlgeschlagen:', error);
+                showFirstTimeSetupDialog();
+            }
+        }
+
+        // Backup manuell laden
+        async function loadBackupManual() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.json';
+            
+            input.onchange = async (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                
+                try {
+                    await processBackupFile(file);
+                    alert('✅ Backup erfolgreich geladen!');
+                    closeAllDialogs();
+                } catch (error) {
+                    console.error('Backup-Load Error:', error);
+                    alert('❌ Fehler beim Laden des Backups:\n\n' + error.message);
+                }
+            };
+            
+            input.click();
+        }
+
+        // Backup-Datei verarbeiten
+        async function processBackupFile(file) {
+            const text = await file.text();
+            const data = JSON.parse(text);
+            
+            // Validiere dass es ein Backup ist
+            if (!data.version || data.learnedTricks === undefined) {
+                throw new Error('Keine gültige Backup-Datei!');
+            }
+            
+            // Restore alles
+            if (data.learnedTricks) {
+                learnedTricks = new Set(data.learnedTricks);
+                localStorage.setItem(STORAGE_KEY, JSON.stringify([...learnedTricks]));
+            }
+            
+            if (data.customTricks) {
+                customTricks = data.customTricks;
+                localStorage.setItem(CUSTOM_TRICKS_KEY, JSON.stringify(customTricks));
+            }
+            
+            if (data.fullData) {
+                currentData = data.fullData;
+                localStorage.setItem(FULL_DATA_KEY, JSON.stringify(currentData));
+                renderApp(currentData);
+            }
+            
+            console.log('✅ Backup komplett wiederhergestellt');
+        }
+
+        // Lokale JSON laden
+        async function loadLocalJSONManual() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.json';
+            
+            input.onchange = async (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                
+                try {
+                    const text = await file.text();
+                    const data = JSON.parse(text);
+                    
+                    // Validiere Tricks-Datenbank
+                    if (!data.trick_database) {
+                        throw new Error('Keine gültige Hundetricks.json!\n\nDie Datei muss eine "trick_database" enthalten.');
+                    }
+                    
+                    currentData = data;
+                    localStorage.setItem(FULL_DATA_KEY, JSON.stringify(data));
+                    mergeCustomTricks();
+                    renderApp(currentData);
+                    
+                    alert('✅ Hundetricks.json erfolgreich geladen!');
+                    closeAllDialogs();
+                } catch (error) {
+                    console.error('Load Error:', error);
+                    alert('❌ Fehler beim Laden:\n\n' + error.message);
+                }
+            };
+            
+            input.click();
+        }
+
+        // Backup erstellen (erweitert)
+        function createBackupEnhanced() {
+            const backup = {
+                version: '2.0',
+                timestamp: new Date().toISOString(),
+                learnedTricks: [...learnedTricks],
+                customTricks: customTricks,
+                fullData: currentData
+            };
+            
+            const dataStr = JSON.stringify(backup, null, 2);
+            const blob = new Blob([dataStr], { type: 'application/json' });
+            
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            const dateStr = new Date().toISOString().split('T')[0];
+            link.download = `hundetricks-backup-${dateStr}.json`;
+            link.click();
+            
+            // Markiere dass Backup existiert
+            localStorage.setItem(BACKUP_EXISTS_KEY, 'true');
+            localStorage.setItem(LAST_BACKUP_DATE_KEY, new Date().toLocaleString('de-DE'));
+            
+            alert('✅ Backup erfolgreich erstellt!\n\n📁 Speichern Sie die Datei an einem sicheren Ort.\n\n💡 Beim nächsten Start können Sie das Backup automatisch laden lassen.');
+        }
+
+        // ============================================================
+        // DIALOGE
+        // ============================================================
+
+        function showBackupLoadDialog() {
+            const lastBackup = localStorage.getItem(LAST_BACKUP_DATE_KEY) || 'Unbekannt';
+            const autoLoad = localStorage.getItem(AUTO_LOAD_BACKUP_KEY) === 'true';
+            
+            const dialog = `
+                <div class="modal-overlay show" id="backupDialog" onclick="if(event.target === this) closeDialog('backupDialog')">
+                    <div class="modal">
+                        <div class="modal-header">
+                            <h2 class="modal-title">📦 Backup gefunden!</h2>
+                            <button class="modal-close" onclick="closeDialog('backupDialog')">✕</button>
+                        </div>
+                        
+                        <div class="modal-body">
+                            <p style="margin-bottom:20px;">
+                                Es wurde ein gespeichertes Backup gefunden. 
+                                Möchten Sie Ihr Backup mit allen gelernten Tricks und eigenen Inhalten laden?
+                            </p>
+                            
+                            <div style="background:var(--bg-main); padding:16px; border-radius:8px; margin-bottom:20px;">
+                                <p style="margin:0 0 8px 0; font-weight:600;">📝 Backup enthält:</p>
+                                <ul style="margin:8px 0; padding-left:20px; color:var(--text-secondary); font-size:0.9rem;">
+                                    <li>Alle gelernten Tricks</li>
+                                    <li>Ihre eigenen Tricks</li>
+                                    <li>Fortschritt & Einstellungen</li>
+                                    <li>Komplette Datenbank</li>
+                                </ul>
+                                <p style="margin:8px 0 0 0; font-size:0.85rem; color:var(--text-secondary);">
+                                    Letztes Backup: ${lastBackup}
+                                </p>
+                            </div>
+                            
+                            <button class="btn btn-primary btn-full" onclick="loadBackupManual()">
+                                📦 Backup vom Gerät laden
+                            </button>
+                            
+                            <div class="divider"></div>
+                            
+                            <button class="btn btn-secondary btn-full" onclick="closeDialog('backupDialog'); showOriginalJsonDialog()">
+                                📄 Stattdessen Original-Datenbank laden
+                            </button>
+                            
+                            <div style="margin-top:16px; padding:12px; background:var(--bg-main); border-radius:8px;">
+                                <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+                                    <input type="checkbox" id="autoLoadBackupDialogCheck" 
+                                           ${autoLoad ? 'checked' : ''}
+                                           onchange="localStorage.setItem(AUTO_LOAD_BACKUP_KEY, this.checked); console.log('Auto-Load Backup:', this.checked);">
+                                    <span style="font-size:0.9rem;">Diesen Dialog nicht mehr anzeigen (lädt automatisch online)</span>
+                                </label>
+                                <p style="margin:8px 0 0 24px; font-size:0.75rem; color:var(--text-secondary);">
+                                    Falls aktiviert, wird beim Start direkt die Online-Datenbank geladen
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.body.insertAdjacentHTML('beforeend', dialog);
+        }
+
+        function showOriginalJsonDialog() {
+            const dialog = `
+                <div class="modal-overlay show" id="originalDialog" onclick="if(event.target === this) closeDialog('originalDialog')">
+                    <div class="modal">
+                        <div class="modal-header">
+                            <h2 class="modal-title">📄 Datenbank laden</h2>
+                            <button class="modal-close" onclick="closeDialog('originalDialog')">✕</button>
+                        </div>
+                        
+                        <div class="modal-body">
+                            <p style="margin-bottom:20px;">
+                                Wählen Sie wie Sie die Hundetricks-Datenbank laden möchten:
+                            </p>
+                            
+                            <div style="background:linear-gradient(135deg, #3ea87615, #2d7a5e15); padding:16px; border-radius:8px; margin-bottom:16px; border:1px solid #3ea87630;">
+                                <p style="margin:0 0 12px 0; font-weight:600;">💡 Empfohlen: Online laden</p>
+                                <p style="margin:0 0 12px 0; font-size:0.85rem; color:var(--text-secondary);">
+                                    Die neueste Version wird automatisch von GitHub geladen.
+                                </p>
+                                <button class="btn btn-primary btn-full" onclick="loadFromGitHub()">
+                                    🌐 Online von GitHub laden
+                                </button>
+                            </div>
+                            
+                            <div class="divider"></div>
+                            
+                            <div style="background:var(--bg-main); padding:16px; border-radius:8px; margin-bottom:16px;">
+                                <p style="margin:0 0 12px 0; font-weight:600;">💾 Lokal: Von Gerät laden</p>
+                                <p style="margin:0 0 12px 0; font-size:0.85rem; color:var(--text-secondary);">
+                                    Laden Sie die Hundetricks.json von Ihrem Gerät.
+                                </p>
+                                <button class="btn btn-secondary btn-full" onclick="loadLocalJSONManual()">
+                                    📁 Datei vom Gerät auswählen
+                                </button>
+                            </div>
+                            
+                            <div class="divider"></div>
+                            
+                            <div style="background:var(--bg-main); padding:16px; border-radius:8px;">
+                                <p style="margin:0 0 12px 0; font-weight:600;">📥 Dateien herunterladen</p>
+                                <p style="margin:0 0 12px 0; font-size:0.85rem; color:var(--text-secondary);">
+                                    Für offline Nutzung können Sie alle Dateien herunterladen:
+                                </p>
+                                
+                                <a href="https://github.com/Digid0t/DigiDot_9/archive/refs/heads/main.zip"
+                                   class="btn btn-accent btn-full"
+                                   style="text-decoration:none; display:block; margin-bottom:8px;"
+                                   download>
+                                    📦 Repository als ZIP herunterladen
+                                </a>
+                                
+                                <a href="https://github.com/Digid0t/DigiDot_9"
+                                   target="_blank"
+                                   class="btn btn-secondary btn-full"
+                                   style="text-decoration:none; display:block;">
+                                    🔗 GitHub Repository öffnen
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.body.insertAdjacentHTML('beforeend', dialog);
+        }
+
+        function showFirstTimeSetupDialog() {
+            const dialog = `
+                <div class="modal-overlay show" id="setupDialog">
+                    <div class="modal">
+                        <div class="modal-header">
+                            <h2 class="modal-title">🎉 Willkommen bei Trick Training!</h2>
+                        </div>
+                        
+                        <div class="modal-body">
+                            <p style="margin-bottom:20px; font-size:1.1rem;">
+                                Um die App zu nutzen, benötigen Sie die Hundetricks-Datenbank.
+                            </p>
+                            
+                            <div style="background:linear-gradient(135deg, #3ea87615, #2d7a5e15); padding:20px; border-radius:12px; margin-bottom:16px; border:2px solid #3ea87650;">
+                                <p style="margin:0 0 12px 0; font-weight:600; font-size:1.05rem;">🌐 Option 1: Online nutzen (Empfohlen)</p>
+                                <p style="margin:0 0 16px 0; font-size:0.9rem; color:var(--text-secondary);">
+                                    Daten werden automatisch von GitHub geladen. Immer aktuell!
+                                </p>
+                                <button class="btn btn-primary btn-full" style="font-size:1.05rem; padding:14px;" onclick="loadFromGitHub()">
+                                    🚀 Jetzt online starten
+                                </button>
+                            </div>
+                            
+                            <div class="divider"></div>
+                            
+                            <div style="background:var(--bg-main); padding:20px; border-radius:12px; margin-bottom:16px;">
+                                <p style="margin:0 0 12px 0; font-weight:600; font-size:1.05rem;">💾 Option 2: Offline nutzen</p>
+                                <p style="margin:0 0 16px 0; font-size:0.9rem; color:var(--text-secondary);">
+                                    Laden Sie die Dateien herunter und wählen Sie die JSON-Datei aus.
+                                </p>
+                                
+                                <a href="https://github.com/Digid0t/DigiDot_9/archive/refs/heads/main.zip"
+                                   class="btn btn-accent btn-full"
+                                   style="text-decoration:none; display:block; margin-bottom:10px;"
+                                   download>
+                                    📥 Repository herunterladen (.zip)
+                                </a>
+                                
+                                <button class="btn btn-secondary btn-full" onclick="loadLocalJSONManual()">
+                                    📁 Hundetricks.json auswählen
+                                </button>
+                            </div>
+                            
+                            <details style="margin-top:20px; background:var(--bg-main); padding:12px; border-radius:8px;">
+                                <summary style="cursor:pointer; color:var(--text-secondary); font-size:0.9rem; font-weight:600;">
+                                    💡 Wie funktioniert das Backup-System?
+                                </summary>
+                                <div style="padding:12px 0 0 0; font-size:0.85rem; color:var(--text-secondary); line-height:1.6;">
+                                    <p><strong>Backup erstellen:</strong></p>
+                                    <p>⚙️ Einstellungen → 💾 "Backup erstellen"<br>
+                                    Speichert alle gelernten Tricks und eigenen Inhalte in einer Datei.</p>
+                                    
+                                    <p style="margin-top:12px;"><strong>Backup laden:</strong></p>
+                                    <p>⚙️ Einstellungen → 📂 "Backup laden"<br>
+                                    Stellt alles aus Ihrer Backup-Datei wieder her.</p>
+                                    
+                                    <p style="margin-top:12px;"><strong>Auto-Load:</strong></p>
+                                    <p>In den Einstellungen können Sie aktivieren, dass Backups beim Start automatisch geladen werden.</p>
+                                </div>
+                            </details>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.body.insertAdjacentHTML('beforeend', dialog);
+        }
+
+        // Helper-Funktionen
+        function loadFromGitHub() {
+            closeAllDialogs();
+            loadJSON();
+        }
+
+        function closeDialog(id) {
+            const dialog = document.getElementById(id);
+            if (dialog) dialog.remove();
+        }
+
+        function closeAllDialogs() {
+            document.querySelectorAll('.modal-overlay').forEach(d => d.remove());
         }
     </script>
 </body>
