@@ -7,9 +7,9 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            --gradient-success: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
-            --gradient-warning: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            --gradient-primary: linear-gradient(135deg, #2d7a5e 0%, #1e5a42 100%);
+            --gradient-success: linear-gradient(135deg, #3ea876 0%, #2d8a5f 100%);
+            --gradient-accent: linear-gradient(135deg, #52c593 0%, #3ea876 100%);
             --bg-main: #f8f9fd;
             --bg-secondary: #ffffff;
             --text-primary: #2d3748;
@@ -30,8 +30,8 @@
         [data-theme="dark"] {
             --bg-main: #1a202c;
             --bg-secondary: #2d3748;
-            --text-primary: #f7fafc;
-            --text-secondary: #cbd5e0;
+            --text-primary: #ffffff;
+            --text-secondary: #f0f4f8;
             --card-bg: #2d3748;
             --border-color: #4a5568;
             --shadow-sm: 0 2px 8px rgba(0,0,0,0.3);
@@ -49,6 +49,7 @@
 
         html {
             overflow-y: scroll;
+            overflow-x: hidden;
             -webkit-overflow-scrolling: touch;
         }
 
@@ -59,23 +60,45 @@
             margin: 0;
             padding: 0;
             line-height: 1.6;
-            padding-bottom: 400px;
+            padding-top: 200px;
+            padding-bottom: 60px;
+            overflow-x: hidden;
+            max-width: 100vw;
         }
 
         /* === STICKY HEADER === */
         .app-header {
             background: var(--card-bg);
-            position: sticky;
+            position: fixed;
             top: 0;
+            left: 0;
+            right: 0;
+            width: 100%;
             z-index: 1000;
             box-shadow: var(--shadow-md);
             backdrop-filter: blur(10px);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            transform: translateY(0);
+        }
+
+        .app-header.header-hidden {
+            transform: translateY(-100%);
+            box-shadow: none;
+        }
+
+        .app-header.collapsed {
+            box-shadow: var(--shadow-sm);
         }
 
         .header-content {
             max-width: 800px;
             margin: 0 auto;
             padding: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .app-header.collapsed .header-content {
+            padding: 12px 20px;
         }
 
         .title-row {
@@ -83,6 +106,11 @@
             justify-content: space-between;
             align-items: center;
             margin-bottom: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .app-header.collapsed .title-row {
+            margin-bottom: 0;
         }
 
         h1 { 
@@ -93,6 +121,81 @@
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
+            transition: all 0.3s ease;
+        }
+
+        .app-header.collapsed h1 {
+            font-size: 1.25rem;
+        }
+
+        .header-collapsible {
+            max-height: 500px;
+            overflow: hidden;
+            transition: max-height 0.3s ease, opacity 0.3s ease, margin 0.3s ease;
+            opacity: 1;
+        }
+
+        .app-header.collapsed .header-collapsible {
+            max-height: 0;
+            opacity: 0;
+            margin: 0;
+        }
+
+        .collapse-toggle {
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            font-size: 1.2rem;
+            padding: 8px;
+            color: var(--text-secondary);
+            transition: all 0.3s ease;
+            border-radius: 50%;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .collapse-toggle:hover {
+            background: var(--bg-main);
+            color: var(--text-primary);
+        }
+
+        .collapse-toggle .arrow {
+            transition: transform 0.3s ease;
+            display: inline-block;
+        }
+
+        .app-header.collapsed .collapse-toggle .arrow {
+            transform: rotate(180deg);
+        }
+
+        .progress-compact {
+            display: none;
+            align-items: center;
+            gap: 12px;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .app-header.collapsed .progress-compact {
+            display: flex;
+        }
+
+        .progress-mini-bar {
+            width: 60px;
+            height: 6px;
+            background: var(--border-color);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .progress-mini-fill {
+            height: 100%;
+            background: var(--gradient-success);
+            border-radius: 10px;
+            transition: width 0.5s ease;
         }
 
         .header-buttons {
@@ -102,7 +205,7 @@
         }
 
         .icon-btn {
-            background: linear-gradient(135deg, #667eea15, #764ba215);
+            background: linear-gradient(135deg, #3ea87615, #2d7a5e15);
             border: none;
             width: 40px;
             height: 40px;
@@ -126,7 +229,7 @@
         }
 
         .icon-btn:hover {
-            background: linear-gradient(135deg, #667eea25, #764ba225);
+            background: linear-gradient(135deg, #3ea87625, #2d7a5e25);
             transform: scale(1.1);
         }
 
@@ -336,6 +439,8 @@
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
+            line-height: 1.4;
+            padding: 2px 0;
         }
 
         .modal-close {
@@ -370,12 +475,16 @@
             margin-bottom: 12px;
             display: block;
             color: var(--text-primary);
+            word-wrap: break-word;
+            line-height: 1.5;
         }
 
         .setting-description {
             font-size: 0.85rem;
             color: var(--text-secondary);
             margin-bottom: 12px;
+            line-height: 1.5;
+            word-wrap: break-word;
         }
 
         .btn {
@@ -389,7 +498,13 @@
             transition: all 0.3s ease;
             display: inline-flex;
             align-items: center;
+            justify-content: center;
             gap: 8px;
+            text-align: center;
+            white-space: normal;
+            word-wrap: break-word;
+            min-height: 44px;
+            line-height: 1.4;
         }
 
         .btn-primary {
@@ -399,16 +514,17 @@
 
         .btn-primary:hover {
             transform: translateY(-2px);
-            box-shadow: var(--shadow-md);
+            box-shadow: 0 4px 12px rgba(45, 122, 94, 0.3);
         }
 
         .btn-secondary {
-            background: #f1f3f9;
-            color: var(--text-primary);
+            background: var(--gradient-accent);
+            color: white;
         }
 
         .btn-secondary:hover {
-            background: #e2e8f0;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(82, 197, 147, 0.3);
         }
 
         .btn-success {
@@ -418,7 +534,7 @@
 
         .btn-success:hover {
             transform: translateY(-2px);
-            box-shadow: var(--shadow-md);
+            box-shadow: 0 4px 12px rgba(62, 168, 118, 0.3);
         }
 
         .btn-full {
@@ -441,7 +557,7 @@
 
         .input-field:focus {
             outline: none;
-            border-color: #667eea;
+            border-color: #3ea876;
             box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
         }
 
@@ -478,21 +594,31 @@
             background: #e2e8f0;
             margin: 24px 0;
         }
+        
+        /* Button Grid Layout */
+        .button-grid {
+            display: grid;
+            gap: 12px;
+        }
+        
+        .button-grid-2 {
+            grid-template-columns: 1fr 1fr;
+        }
 
         .stats-badge {
-            background: linear-gradient(135deg, #667eea20, #764ba220);
+            background: linear-gradient(135deg, #3ea87620, #2d7a5e20);
             padding: 8px 16px;
             border-radius: 50px;
             font-size: 0.85rem;
             font-weight: 600;
-            color: #667eea;
-            border: 1px solid #667eea30;
+            color: #3ea876;
+            border: 1px solid #3ea87630;
         }
 
         [data-theme="dark"] .stats-badge {
-            background: linear-gradient(135deg, #667eea30, #764ba230);
-            border-color: #667eea50;
-            color: #a5b4fc;
+            background: linear-gradient(135deg, #3ea87630, #2d7a5e30);
+            border-color: #3ea87650;
+            color: #52c593;
         }
 
         /* === SEARCH === */
@@ -525,7 +651,7 @@
 
         .search-input:focus {
             background: var(--input-bg);
-            border-color: #667eea;
+            border-color: #3ea876;
             box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
         }
 
@@ -536,7 +662,7 @@
 
         /* === PROGRESS === */
         .progress-section {
-            background: linear-gradient(135deg, #667eea15, #764ba215);
+            background: linear-gradient(135deg, #3ea87615, #2d7a5e15);
             padding: 16px;
             border-radius: var(--radius-lg);
             margin-bottom: 8px;
@@ -569,7 +695,7 @@
             width: 0%;
             transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
             border-radius: 50px;
-            box-shadow: 0 2px 8px rgba(56, 239, 125, 0.3);
+            box-shadow: 0 2px 8px rgba(62, 168, 118, 0.3);
         }
 
         /* === CONTENT AREA === */
@@ -577,7 +703,7 @@
             max-width: 800px;
             margin: 0 auto;
             padding: 20px;
-            padding-bottom: 300px;
+            padding-bottom: 60px;
         }
 
         /* === CATEGORIES === */
@@ -618,7 +744,7 @@
             top: 0;
             bottom: 0;
             width: 5px;
-            background: var(--category-color, linear-gradient(135deg, #667eea, #764ba2));
+            background: var(--category-color, linear-gradient(135deg, #3ea876, #2d7a5e));
             transition: width 0.3s ease;
         }
 
@@ -627,7 +753,7 @@
         }
         
         .category-wrapper {
-            --category-color: #667eea;
+            --category-color: #3ea876;
         }
 
         .cat-title {
@@ -674,7 +800,7 @@
 
         .trick-card:hover {
             box-shadow: var(--shadow-md);
-            border-color: #667eea30;
+            border-color: #3ea87630;
         }
 
         .trick-card.learned {
@@ -700,7 +826,7 @@
             position: absolute;
             top: 12px;
             right: 12px;
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            background: linear-gradient(135deg, #52c593 0%, #3ea876 100%);
             color: white;
             padding: 4px 12px;
             border-radius: 20px;
@@ -747,16 +873,16 @@
         .trick-id { 
             font-size: 0.75rem;
             font-weight: 600;
-            color: #667eea;
-            background: linear-gradient(135deg, #667eea15, #764ba215);
+            color: #3ea876;
+            background: linear-gradient(135deg, #3ea87615, #2d7a5e15);
             padding: 6px 12px;
             border-radius: 50px;
             white-space: nowrap;
         }
 
         [data-theme="dark"] .trick-id {
-            color: #a5b4fc;
-            background: linear-gradient(135deg, #667eea30, #764ba230);
+            color: #52c593;
+            background: linear-gradient(135deg, #3ea87630, #2d7a5e30);
         }
 
         /* === INFO BLOCKS === */
@@ -774,6 +900,7 @@
             display: flex;
             align-items: center;
             gap: 8px;
+            flex-wrap: wrap;
         }
 
         .block-icon {
@@ -783,6 +910,7 @@
             justify-content: center;
             width: 28px;
             height: 28px;
+            min-width: 28px;
             background: var(--bg-main);
             border-radius: 8px;
             border: 1px solid var(--border-color);
@@ -793,6 +921,8 @@
             color: var(--text-primary);
             line-height: 1.7;
             font-weight: 400;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
         }
 
         .text-long {
@@ -803,14 +933,16 @@
             padding: 16px;
             border-radius: var(--radius-md);
             margin-top: 12px;
-            border-left: 4px solid #667eea;
+            border-left: 4px solid #3ea876;
             line-height: 1.7;
             animation: slideDown 0.4s cubic-bezier(0.4, 0, 0.2, 1);
             border: 1px solid var(--border-color);
+            word-wrap: break-word;
+            overflow-wrap: break-word;
         }
 
         [data-theme="dark"] .text-long {
-            border-left-color: #a5b4fc;
+            border-left-color: #52c593;
         }
 
         .text-long.show { 
@@ -855,19 +987,19 @@
         /* === VARIATIONS === */
         .variation-container {
             margin-top: 24px;
-            background: linear-gradient(135deg, #fff8e1, #fff3cd);
+            background: linear-gradient(135deg, #e8f5f0, #d4ede3);
             border-radius: var(--radius-md);
             padding: 20px;
-            border: 2px solid #ffe082;
+            border: 2px solid #a8d5c3;
         }
 
         [data-theme="dark"] .variation-container {
-            background: linear-gradient(135deg, #3d3416, #4a3e1a);
-            border-color: #6b5d2a;
+            background: linear-gradient(135deg, #1e3d32, #2a5142);
+            border-color: #3a6b54;
         }
 
         .variation-title {
-            color: #f57c00;
+            color: #2d7a5e;
             font-weight: 700;
             font-size: 1.05rem;
             margin-bottom: 16px;
@@ -877,7 +1009,7 @@
         }
 
         [data-theme="dark"] .variation-title {
-            color: #ffa726;
+            color: #52c593;
         }
 
         /* === CHECKBOX/TOGGLE === */
@@ -933,7 +1065,7 @@
 
         .check-wrapper.active .switch {
             background: var(--gradient-success);
-            box-shadow: 0 2px 8px rgba(56, 239, 125, 0.3);
+            box-shadow: 0 2px 8px rgba(62, 168, 118, 0.3);
         }
 
         .knob {
@@ -958,9 +1090,156 @@
             .trick-card { padding: 20px; }
             .container { padding: 16px; }
             .header-content { padding: 16px; }
+            
+            /* Modal Improvements */
+            .modal {
+                max-width: 100%;
+                margin: 0;
+                border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+                max-height: 95vh;
+            }
+            
+            .modal-overlay {
+                padding: 0 8px;
+                align-items: flex-end;
+            }
+            
+            .modal-header {
+                padding: 24px 20px;
+            }
+            
+            .modal-title {
+                font-size: 1.25rem;
+                word-break: break-word;
+                line-height: 1.3;
+            }
+            
+            .modal-body {
+                padding: 20px 16px;
+                overflow-x: hidden;
+            }
+            
+            .setting-group {
+                margin-bottom: 24px;
+            }
+            
+            /* Input Fields */
+            .input-field {
+                font-size: 16px; /* Verhindert Auto-Zoom auf iOS */
+                padding: 12px;
+                word-break: break-all;
+            }
+            
+            /* Button Grid - Single Column on Mobile */
+            .button-grid-2 {
+                grid-template-columns: 1fr;
+            }
+            
+            /* Buttons */
+            .btn {
+                font-size: 0.9rem;
+                padding: 12px 16px;
+                min-height: 48px;
+            }
+            
+            .textarea-field {
+                min-height: 120px;
+            }
+            
+            /* Buttons */
+            .btn-primary, .btn-secondary, .btn-success {
+                padding: 14px 20px;
+                font-size: 1rem;
+                white-space: normal;
+                min-height: 48px;
+            }
+            
+            /* Burger Menu */
+            .burger-menu {
+                width: 85%;
+                max-width: 320px;
+            }
+            
+            /* Settings speziell */
+            .setting-label {
+                font-size: 0.95rem;
+            }
+            
+            .setting-description {
+                font-size: 0.8rem;
+                line-height: 1.5;
+            }
+        }
+        
+        @media (max-width: 400px) {
+            .modal-title {
+                font-size: 1.1rem;
+            }
+            
+            .btn-primary, .btn-secondary, .btn-success {
+                font-size: 0.9rem;
+                padding: 12px 16px;
+            }
+            
+            .input-field {
+                padding: 12px;
+                font-size: 16px;
+            }
         }
 
         /* === UTILITIES === */
+        .app-footer {
+            background: var(--card-bg);
+            padding: 32px 20px;
+            margin-top: 60px;
+            border-top: 2px solid var(--border-color);
+            text-align: center;
+        }
+        
+        .footer-content {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 24px;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+        }
+        
+        .footer-link {
+            color: #3ea876;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .footer-link:hover {
+            color: #2d7a5e;
+            transform: translateY(-2px);
+        }
+        
+        .footer-text {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            margin-top: 12px;
+        }
+        
+        .footer-divider {
+            height: 1px;
+            background: var(--border-color);
+            margin: 20px 0;
+            max-width: 400px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
         @keyframes fadeIn {
             from { opacity: 0; }
             to { opacity: 1; }
@@ -969,7 +1248,7 @@
 </head>
 <body>
 
-    <div class="app-header">
+    <div class="app-header" id="appHeader">
         <div class="header-content">
             <div class="title-row">
                 <div style="display: flex; align-items: center; gap: 12px;">
@@ -977,8 +1256,17 @@
                         ☰ Menü
                     </button>
                     <h1>🐾 Trick Training</h1>
+                    <div class="progress-compact">
+                        <div class="progress-mini-bar">
+                            <div class="progress-mini-fill" id="progressMini"></div>
+                        </div>
+                        <span id="statsCompact">0/0</span>
+                    </div>
                 </div>
                 <div class="header-buttons">
+                    <button class="collapse-toggle" onclick="toggleHeaderCollapse()" title="Header ein-/ausklappen">
+                        <span class="arrow">▼</span>
+                    </button>
                     <span class="stats-badge" id="statsInfo">0 / 0</span>
                     <button class="icon-btn" onclick="toggleDarkMode()" id="darkModeBtn" title="Dark Mode">🌙</button>
                     <button class="icon-btn" onclick="openSettings()" title="Einstellungen">⚙️</button>
@@ -986,22 +1274,24 @@
                 </div>
             </div>
 
-            <div class="search-box">
-                <span class="search-icon">🔍</span>
-                <input type="text" 
-                       class="search-input" 
-                       placeholder="Trick suchen..." 
-                       id="searchInput"
-                       oninput="handleSearch(event)">
-            </div>
-
-            <div class="progress-section">
-                <div class="progress-label">
-                    <span>Dein Fortschritt</span>
-                    <span id="progressLabel">0% Komplett</span>
+            <div class="header-collapsible">
+                <div class="search-box">
+                    <span class="search-icon">🔍</span>
+                    <input type="text" 
+                           class="search-input" 
+                           placeholder="Trick suchen..." 
+                           id="searchInput"
+                           oninput="handleSearch(event)">
                 </div>
-                <div class="progress-track">
-                    <div class="progress-fill" id="progressBar"></div>
+
+                <div class="progress-section">
+                    <div class="progress-label">
+                        <span>Dein Fortschritt</span>
+                        <span id="progressLabel">0% Komplett</span>
+                    </div>
+                    <div class="progress-track">
+                        <div class="progress-fill" id="progressBar"></div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1023,8 +1313,29 @@
         <!-- Dynamisch befüllt -->
     </div>
     
+    <!-- Footer -->
+    <footer class="app-footer">
+        <div class="footer-content">
+            <div class="footer-links">
+                <a href="https://github.com/Digid0t/DigiDot_9" target="_blank" rel="noopener noreferrer" class="footer-link">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
+                    </svg>
+                    GitHub Repository
+                </a>
+                <a href="https://raw.githubusercontent.com/Digid0t/DigiDot_9/main/Hundetricks.json" target="_blank" rel="noopener noreferrer" class="footer-link">
+                    📥 JSON Datei
+                </a>
+            </div>
+            <div class="footer-divider"></div>
+            <div class="footer-text">
+                Hundetricks Datenbank v2.0 | Made with 💜 for dog training
+            </div>
+        </div>
+    </footer>
+    
     <!-- Spacer für vollständiges Scrollen -->
-    <div style="height: 500px; min-height: 500px;"></div>
+    <div style="height: 40px;"></div>
 
     <!-- === SETTINGS MODAL === -->
     <div class="modal-overlay" id="settingsModal">
@@ -1038,31 +1349,30 @@
                     <label class="setting-label">📥 JSON laden</label>
                     <p class="setting-description">Lade Tricks aus einer JSON-Datei oder per URL</p>
                     
-                    <div class="file-input-wrapper">
-                        <label class="btn btn-success btn-full" style="margin-bottom:16px;">
-                            📁 Datei vom Gerät laden
-                            <input type="file" accept=".json" onchange="loadJSONFile(event)">
-                        </label>
+                    <div class="button-grid button-grid-2" style="margin-bottom: 16px;">
+                        <div class="file-input-wrapper">
+                            <label class="btn btn-success btn-full">
+                                📁 Vom Gerät
+                                <input type="file" accept=".json" onchange="loadJSONFile(event)">
+                            </label>
+                        </div>
+                        
+                        <a href="https://raw.githubusercontent.com/Digid0t/DigiDot_9/main/Hundetricks.json" 
+                           download="Hundetricks.json" 
+                           class="btn btn-secondary btn-full" 
+                           style="text-decoration:none; display:flex;">
+                            💾 Download
+                        </a>
                     </div>
                     
-                    <div style="text-align:center; margin:16px 0;">
-                        <span style="color:var(--text-secondary); font-size:0.9rem;">oder</span>
+                    <div style="text-align:center; margin:12px 0 16px 0;">
+                        <span style="color:var(--text-secondary); font-size:0.85rem; font-weight: 600;">Von URL laden:</span>
                     </div>
                     
-                    <a href="https://raw.githubusercontent.com/Digid0t/DigiDot_9/main/Hundetricks.json" 
-                       download="Hundetricks.json" 
-                       class="btn btn-secondary btn-full" 
-                       style="margin-bottom:16px; text-decoration:none; display:flex;">
-                        💾 JSON-Datei herunterladen
-                    </a>
-                    
-                    <div class="divider"></div>
-                    
-                    <p style="margin:12px 0; color:var(--text-secondary); font-size:0.9rem;">Von URL laden:</p>
                     <input type="text" class="input-field" id="jsonUrl" 
-                           placeholder="https://example.com/tricks.json" 
+                           placeholder="https://..." 
                            value="https://raw.githubusercontent.com/Digid0t/DigiDot_9/main/Hundetricks.json">
-                    <button class="btn btn-secondary btn-full" onclick="loadJSONFromURL()">
+                    <button class="btn btn-primary btn-full" onclick="loadJSONFromURL()">
                         🔗 Von URL laden
                     </button>
                 </div>
@@ -1071,20 +1381,34 @@
 
                 <div class="setting-group">
                     <label class="setting-label">💾 Daten sichern & laden</label>
-                    <p class="setting-description">Speichere deinen kompletten Fortschritt und alle eigenen Tricks</p>
+                    <p class="setting-description">Speichere deinen Fortschritt und eigene Tricks</p>
                     
-                    <button class="btn btn-success btn-full" onclick="exportData()">
-                        💾 Alles auf Gerät speichern
-                    </button>
-                    
-                    <div style="height: 12px;"></div>
-                    
-                    <div class="file-input-wrapper">
-                        <label class="btn btn-primary btn-full">
-                            📤 Gespeicherte Daten laden
-                            <input type="file" accept=".json" onchange="importData(event)">
-                        </label>
+                    <div class="button-grid button-grid-2">
+                        <button class="btn btn-success btn-full" onclick="exportData()">
+                            💾 Speichern
+                        </button>
+                        
+                        <div class="file-input-wrapper">
+                            <label class="btn btn-primary btn-full">
+                                📤 Laden
+                                <input type="file" accept=".json" onchange="importData(event)">
+                            </label>
+                        </div>
                     </div>
+                </div>
+
+                <div class="divider"></div>
+
+                <div class="setting-group">
+                    <label class="setting-label">🔗 GitHub Repository</label>
+                    <p class="setting-description">Quellcode, Updates und Dokumentation</p>
+                    <a href="https://github.com/Digid0t/DigiDot_9" 
+                       target="_blank" 
+                       rel="noopener noreferrer"
+                       class="btn btn-primary btn-full" 
+                       style="text-decoration: none;">
+                        <span>📂 GitHub öffnen</span>
+                    </a>
                 </div>
 
                 <div class="divider"></div>
@@ -1118,44 +1442,40 @@
                 </div>
 
                 <div class="setting-group">
-                    <label class="setting-label">Titel des Tricks</label>
+                    <label class="setting-label">Titel des Tricks *</label>
                     <input type="text" class="input-field" id="newTrickTitle" placeholder="z.B. Spin">
                 </div>
 
                 <div class="setting-group">
-                    <label class="setting-label">✋ Handzeichen (kurz)</label>
+                    <label class="setting-label">✋ Handzeichen</label>
                     <input type="text" class="input-field" id="newTrickHandKurz" 
-                           placeholder="Kurzbeschreibung des Handzeichens">
-                    <label class="setting-label">✋ Handzeichen (ausführlich)</label>
+                           placeholder="Kurz: z.B. Zeigefinger nach oben">
                     <textarea class="input-field textarea-field" id="newTrickHandLang" 
-                              placeholder="Detaillierte Beschreibung des Handzeichens"></textarea>
+                              placeholder="Ausführlich: Detaillierte Beschreibung..."></textarea>
                 </div>
 
                 <div class="setting-group">
-                    <label class="setting-label">🎬 Bewegungsablauf (kurz)</label>
+                    <label class="setting-label">🎬 Bewegungsablauf</label>
                     <input type="text" class="input-field" id="newTrickBewegungKurz" 
-                           placeholder="Kurzbeschreibung der Bewegung">
-                    <label class="setting-label">🎬 Bewegungsablauf (ausführlich)</label>
+                           placeholder="Kurz: z.B. Hund dreht sich im Kreis">
                     <textarea class="input-field textarea-field" id="newTrickBewegungLang" 
-                              placeholder="Detaillierte Beschreibung des Bewegungsablaufs"></textarea>
+                              placeholder="Ausführlich: Detaillierte Beschreibung..."></textarea>
                 </div>
 
                 <div class="setting-group">
-                    <label class="setting-label">📍 Endposition (kurz)</label>
+                    <label class="setting-label">📍 Endposition</label>
                     <input type="text" class="input-field" id="newTrickEndposKurz" 
-                           placeholder="Kurzbeschreibung der Endposition">
-                    <label class="setting-label">📍 Endposition (ausführlich)</label>
+                           placeholder="Kurz: z.B. Hund steht vor dir">
                     <textarea class="input-field textarea-field" id="newTrickEndposLang" 
-                              placeholder="Detaillierte Beschreibung der Endposition"></textarea>
+                              placeholder="Ausführlich: Detaillierte Beschreibung..."></textarea>
                 </div>
 
                 <div class="setting-group">
-                    <label class="setting-label">💡 Trainingstipps (kurz)</label>
+                    <label class="setting-label">💡 Trainingstipps</label>
                     <input type="text" class="input-field" id="newTrickTippsKurz" 
-                           placeholder="Kurze Trainingstipps">
-                    <label class="setting-label">💡 Trainingstipps (ausführlich)</label>
+                           placeholder="Kurz: z.B. Mit Leckerli führen">
                     <textarea class="input-field textarea-field" id="newTrickTippsLang" 
-                              placeholder="Ausführliche Trainingstipps"></textarea>
+                              placeholder="Ausführlich: Detaillierte Trainingstipps..."></textarea>
                 </div>
 
                 <button class="btn btn-success btn-full" onclick="saveNewTrick()">
@@ -1220,6 +1540,59 @@
             menu.classList.remove('show');
         }
 
+        // === HEADER COLLAPSE ===
+        let headerCollapsed = false;
+        let headerHidden = false;
+        let lastScrollY = 0;
+        const scrollThreshold = 50;
+
+        function toggleHeaderCollapse() {
+            const header = document.getElementById('appHeader');
+            headerCollapsed = !headerCollapsed;
+            
+            if (headerCollapsed) {
+                header.classList.add('collapsed');
+                localStorage.setItem('headerCollapsed', 'true');
+            } else {
+                header.classList.remove('collapsed');
+                localStorage.setItem('headerCollapsed', 'false');
+            }
+        }
+
+        function initHeaderState() {
+            const savedState = localStorage.getItem('headerCollapsed');
+            if (savedState === 'true') {
+                headerCollapsed = true;
+                document.getElementById('appHeader').classList.add('collapsed');
+            }
+        }
+
+        // Auto-hide/show header beim Scrollen
+        let scrollTimeout;
+        window.addEventListener('scroll', () => {
+            const currentScrollY = window.scrollY;
+            const header = document.getElementById('appHeader');
+            
+            if (!header) return;
+            
+            // Runterscrollen: Header ausblenden
+            if (currentScrollY > lastScrollY && currentScrollY > scrollThreshold) {
+                if (!headerHidden) {
+                    header.classList.add('header-hidden');
+                    headerHidden = true;
+                }
+            }
+            // Hochscrollen: Header wieder einblenden
+            else if (currentScrollY < lastScrollY || currentScrollY < 50) {
+                if (headerHidden) {
+                    header.classList.remove('header-hidden');
+                    headerHidden = false;
+                }
+            }
+            
+            lastScrollY = currentScrollY <= 0 ? 0 : currentScrollY;
+        });
+
         function generateNavigation(data) {
             if (!data || !data.trick_database) return;
 
@@ -1277,16 +1650,33 @@
         function scrollToTrick(trickId) {
             const card = document.getElementById(`card-${trickId}`);
             if (card) {
-                card.scrollIntoView({ 
-                    behavior: 'smooth', 
-                    block: 'start'
-                });
+                // Kategorie öffnen, falls eingeklappt
+                const categoryBody = card.closest('.cat-body');
+                const categoryWrapper = card.closest('.category-wrapper');
                 
-                // Highlight effect
-                card.style.boxShadow = '0 0 0 3px #667eea';
+                if (categoryBody && categoryWrapper) {
+                    const categoryHeader = categoryWrapper.querySelector('.cat-header');
+                    
+                    // Kategorie öffnen
+                    if (!categoryBody.classList.contains('open')) {
+                        categoryBody.classList.add('open');
+                        categoryHeader.classList.add('active');
+                    }
+                }
+                
+                // Kurze Verzögerung, damit die Kategorie Zeit hat sich zu öffnen
                 setTimeout(() => {
-                    card.style.boxShadow = '';
-                }, 2000);
+                    card.scrollIntoView({ 
+                        behavior: 'smooth', 
+                        block: 'start'
+                    });
+                    
+                    // Highlight effect
+                    card.style.boxShadow = '0 0 0 3px #3ea876';
+                    setTimeout(() => {
+                        card.style.boxShadow = '';
+                    }, 2000);
+                }, 100);
             }
         }
 
@@ -1615,6 +2005,7 @@
         // App-Start
         window.onload = function() {
             initDarkMode();
+            initHeaderState();
             loadStorage();
             loadCustomTricks();
             
@@ -1638,7 +2029,7 @@
                             const container = document.getElementById('tricksContainer');
                             if (container && container.children.length > 0) {
                                 const banner = document.createElement('div');
-                                banner.style.cssText = 'background:#fff3cd; color:#856404; padding:12px; text-align:center; margin-bottom:16px; border-radius:8px; font-size:0.9rem;';
+                                banner.style.cssText = 'background:#e8f5f0; color:#2d7a5e; padding:12px; text-align:center; margin-bottom:16px; border-radius:8px; font-size:0.9rem;';
                                 banner.innerHTML = '📡 Offline-Modus: Verwende gespeicherte Daten';
                                 container.insertBefore(banner, container.firstChild);
                             }
@@ -1731,8 +2122,8 @@
                     <div style="font-size:3rem; margin-bottom:20px;">⚠️</div>
                     <h2 style="margin:0 0 20px 0; font-size:1.5rem; color:#e53e3e;">Verbindungsfehler</h2>
                     
-                    <div style="background:var(--card-bg); padding:24px; border-radius:12px; margin:20px auto; max-width:500px; text-align:left; border: 2px solid #667eea;">
-                        <h3 style="margin:0 0 20px 0; font-size:1.1rem; color:#667eea;">📥 So laden Sie die Tricks:</h3>
+                    <div style="background:var(--card-bg); padding:24px; border-radius:12px; margin:20px auto; max-width:500px; text-align:left; border: 2px solid #3ea876;">
+                        <h3 style="margin:0 0 20px 0; font-size:1.1rem; color:#3ea876;">📥 So laden Sie die Tricks:</h3>
                         
                         <div style="margin-bottom:20px; padding:16px; background:var(--bg-main); border-radius:8px;">
                             <p style="margin:0 0 8px 0; font-weight:600;">Methode 1: Download & Upload (Empfohlen)</p>
@@ -1757,7 +2148,7 @@
                     
                     <div style="margin-top:20px;">
                         <a href="https://github.com/Digid0t/DigiDot_9" target="_blank" 
-                           style="color:#667eea; text-decoration:none; font-size:0.9rem;">
+                           style="color:#3ea876; text-decoration:none; font-size:0.9rem;">
                             📂 Zum GitHub Repository →
                         </a>
                     </div>
@@ -2055,18 +2446,25 @@
             const done = learnedTricks.size;
             const percent = totalTricks > 0 ? Math.round((done/totalTricks)*100) : 0;
             
+            // Haupt-Fortschrittsanzeige
             document.getElementById('progressBar').style.width = percent + '%';
             document.getElementById('progressLabel').innerText = `${percent}% Komplett`;
             document.getElementById('statsInfo').innerText = `${done} / ${totalTricks}`;
+            
+            // Mini-Fortschrittsanzeige (für eingeklappten Header)
+            const miniBar = document.getElementById('progressMini');
+            const statsCompact = document.getElementById('statsCompact');
+            if (miniBar) miniBar.style.width = percent + '%';
+            if (statsCompact) statsCompact.innerText = `${done}/${totalTricks}`;
         }
 
         function getColor(code) {
             const map = {
-                'green': '#11998e',
-                'yellow': '#f57c00',
-                'red': '#e53e3e'
+                'green': '#11998e',    // Türkis-Grün für Anfänger
+                'yellow': '#FFC15E',   // Orange-Gelb für Fortgeschritten
+                'red': '#e74c3c'       // Rot für Profi
             };
-            return map[code] || '#667eea';
+            return map[code] || '#3ea876';
         }
 
         function cleanCategoryName(name) {
