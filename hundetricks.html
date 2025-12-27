@@ -1425,11 +1425,14 @@
                     
                     <div style="text-align:center; margin:12px 0 16px 0;">
                         <span style="color:var(--text-secondary); font-size:0.85rem; font-weight: 600;">Von URL laden:</span>
+                        <p style="margin:4px 0 0 0; font-size:0.75rem; color:var(--text-secondary);">
+                            💡 Bei GitHub-URLs werden automatisch alle Varianten getestet
+                        </p>
                     </div>
                     
                     <input type="text" class="input-field" id="jsonUrl" 
-                           placeholder="https://..." 
-                           value="https://raw.githubusercontent.com/Digid0t/DigiDot_9/main/Hundetricks.json">
+                           placeholder="GitHub URL oder direkte JSON-URL" 
+                           value="https://raw.githack.com/Digid0t/DigiDot_9/main/Hundetricks.json">
                     <button class="btn btn-primary btn-full" onclick="loadJSONFromURL()">
                         🔗 Von URL laden
                     </button>
@@ -1894,7 +1897,7 @@
 
         async function loadJSONFromURL() {
             const urlInput = document.getElementById('jsonUrl');
-            const url = urlInput.value.trim();
+            let url = urlInput.value.trim();
             
             if (!url) {
                 alert('❌ Bitte eine URL eingeben!');
@@ -1902,52 +1905,113 @@
             }
 
             console.log('🔗 Lade von URL:', url);
-
-            try {
-                const response = await fetch(url, {
-                    method: 'GET',
-                    mode: 'cors',
-                    cache: 'no-cache',
-                    headers: {
-                        'Accept': 'application/json'
-                    }
-                });
+            
+            // Intelligente GitHub URL-Erkennung und Konvertierung
+            let urls = [url]; // Starte mit der vom User eingegebenen URL
+            
+            // Wenn es eine GitHub-URL ist, generiere Varianten
+            if (url.includes('github.com')) {
+                const githubMatch = url.match(/github\.com\/([^\/]+)\/([^\/]+)\/(?:blob|raw)\/([^\/]+)\/(.+)/);
                 
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                if (githubMatch) {
+                    const [, owner, repo, branch, file] = githubMatch;
+                    
+                    console.log('📂 GitHub-Repository erkannt:', { owner, repo, branch, file });
+                    
+                    // Generiere alle Varianten
+                    urls = [
+                        // GitHack (schnell, cached)
+                        `https://raw.githack.com/${owner}/${repo}/${branch}/${file}`,
+                        // Raw GitHub
+                        `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${file}`,
+                        // Original URL
+                        url,
+                        // API als Fallback
+                        `https://api.github.com/repos/${owner}/${repo}/contents/${file}?ref=${branch}`
+                    ];
+                    
+                    console.log('🔄 Generierte URL-Varianten:', urls);
                 }
-                
-                const data = await response.json();
-                console.log('📦 Daten empfangen, validiere...');
-                
-                // VALIDIERUNG: Ist das eine Tricks-Datenbank oder ein Backup?
-                if (data.version && data.learnedTricks !== undefined) {
-                    alert('❌ Dies ist eine Backup-Datei, nicht die Tricks-Datenbank!\n\nBitte verwenden Sie die URL zur Hundetricks.json Datei.');
-                    return;
-                }
-                
-                // Validierung: Prüfe ob es eine gültige Tricks-Datenbank ist
-                if (!data.trick_database) {
-                    alert('❌ Ungültige URL!\n\nDie Datei muss eine "trick_database" enthalten.\n\nKorrekte URL:\nhttps://raw.githubusercontent.com/Digid0t/DigiDot_9/main/Hundetricks.json');
-                    return;
-                }
-                
-                console.log('✅ Gültige Tricks-Datenbank von URL geladen');
-                console.log('📊 Kategorien:', Object.keys(data.trick_database));
-                currentData = data;
-                localStorage.setItem(FULL_DATA_KEY, JSON.stringify(data));
-                localStorage.setItem(JSON_URL_KEY, url);
-                
-                mergeCustomTricks();
-                renderApp(currentData);
-                alert('✅ JSON erfolgreich geladen!');
-                closeSettings();
-                
-            } catch (error) {
-                console.error('URL load error:', error);
-                alert('❌ Fehler beim Laden:\n\n' + error.message + 
-                      '\n\nAlternative: Laden Sie die Datei direkt vom Gerät über "📁 Datei vom Gerät laden"');
             }
+
+            let lastError = null;
+            
+            for (let i = 0; i < urls.length; i++) {
+                const currentUrl = urls[i];
+                
+                try {
+                    console.log(`\n🔍 Versuch ${i + 1}/${urls.length}: ${currentUrl}`);
+                    
+                    const response = await fetch(currentUrl, {
+                        method: 'GET',
+                        mode: 'cors',
+                        cache: 'no-cache',
+                        headers: {
+                            'Accept': 'application/json',
+                            'User-Agent': 'TrickTraining-App'
+                        }
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+                    
+                    let data;
+                    
+                    // GitHub API gibt base64-encoded content zurück
+                    if (currentUrl.includes('api.github.com')) {
+                        const apiData = await response.json();
+                        const decoded = atob(apiData.content);
+                        data = JSON.parse(decoded);
+                    } else {
+                        data = await response.json();
+                    }
+                    
+                    console.log('📦 Daten empfangen, validiere...');
+                    
+                    // VALIDIERUNG: Ist das eine Tricks-Datenbank oder ein Backup?
+                    if (data.version && data.learnedTricks !== undefined) {
+                        alert('❌ Dies ist eine Backup-Datei, nicht die Tricks-Datenbank!\n\nBitte verwenden Sie die URL zur Hundetricks.json Datei.');
+                        return;
+                    }
+                    
+                    // Validierung: Prüfe ob es eine gültige Tricks-Datenbank ist
+                    if (!data.trick_database) {
+                        throw new Error('Keine "trick_database" gefunden');
+                    }
+                    
+                    console.log('✅ Gültige Tricks-Datenbank von URL geladen');
+                    console.log('📊 Kategorien:', Object.keys(data.trick_database));
+                    
+                    currentData = data;
+                    localStorage.setItem(FULL_DATA_KEY, JSON.stringify(data));
+                    localStorage.setItem(JSON_URL_KEY, currentUrl);
+                    
+                    mergeCustomTricks();
+                    renderApp(currentData);
+                    alert('✅ JSON erfolgreich geladen!');
+                    closeSettings();
+                    
+                    return; // Erfolg!
+                    
+                } catch (error) {
+                    console.warn(`⚠️ Versuch ${i + 1} fehlgeschlagen:`, error.message);
+                    lastError = error;
+                    
+                    // Bei GitHack kurz warten
+                    if (currentUrl.includes('githack') && i < urls.length - 1) {
+                        await new Promise(resolve => setTimeout(resolve, 1000));
+                    }
+                    
+                    continue;
+                }
+            }
+            
+            // Alle Versuche fehlgeschlagen
+            console.error('❌ Alle Lade-Versuche fehlgeschlagen:', lastError);
+            alert('❌ Fehler beim Laden von allen Quellen:\n\n' + 
+                  (lastError?.message || 'Unbekannter Fehler') + 
+                  '\n\nAlternative: Laden Sie die Datei direkt vom Gerät über "📁 Datei vom Gerät laden"');
         }
 
         // === CUSTOM TRICK CREATION ===
@@ -2136,45 +2200,107 @@
         }
 
         async function loadJSON() {
-            const url = 'https://raw.githubusercontent.com/Digid0t/DigiDot_9/main/Hundetricks.json';
+            // Intelligente URL-Generierung mit Fallback-Strategie
+            const githubConfig = {
+                owner: 'Digid0t',
+                repo: 'DigiDot_9',
+                branch: 'main',
+                file: 'Hundetricks.json'
+            };
             
-            try {
-                console.log('🔄 Lade JSON von:', url);
-                const response = await fetch(url, {
-                    method: 'GET',
-                    mode: 'cors',
-                    cache: 'no-cache',
-                    headers: {
-                        'Accept': 'application/json'
+            // Generiere alle möglichen URL-Varianten
+            const urls = [
+                // 1. Lokale Datei (falls im selben Ordner)
+                `./${githubConfig.file}`,
+                `${githubConfig.file}`,
+                
+                // 2. GitHack CDN (schnell, cached)
+                `https://raw.githack.com/${githubConfig.owner}/${githubConfig.repo}/${githubConfig.branch}/${githubConfig.file}`,
+                
+                // 3. Raw GitHub (direkt)
+                `https://raw.githubusercontent.com/${githubConfig.owner}/${githubConfig.repo}/${githubConfig.branch}/${githubConfig.file}`,
+                
+                // 4. GitHub API (als letzter Ausweg)
+                `https://api.github.com/repos/${githubConfig.owner}/${githubConfig.repo}/contents/${githubConfig.file}?ref=${githubConfig.branch}`
+            ];
+            
+            console.log('🔄 Starte JSON-Laden mit Fallback-Strategie');
+            console.log('📋 Versuche folgende URLs in Reihenfolge:', urls);
+            
+            let lastError = null;
+            
+            // Versuche jede URL nacheinander
+            for (let i = 0; i < urls.length; i++) {
+                const url = urls[i];
+                const urlType = i === 0 || i === 1 ? 'Lokal' : 
+                               i === 2 ? 'GitHack CDN' : 
+                               i === 3 ? 'Raw GitHub' : 'GitHub API';
+                
+                try {
+                    console.log(`\n🔍 Versuch ${i + 1}/${urls.length}: ${urlType}`);
+                    console.log(`   URL: ${url}`);
+                    
+                    const response = await fetch(url, {
+                        method: 'GET',
+                        mode: 'cors',
+                        cache: 'no-cache',
+                        headers: {
+                            'Accept': 'application/json',
+                            'User-Agent': 'TrickTraining-App'
+                        }
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
                     }
-                });
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    
+                    let data;
+                    
+                    // GitHub API gibt base64-encoded content zurück
+                    if (url.includes('api.github.com')) {
+                        const apiData = await response.json();
+                        const decoded = atob(apiData.content);
+                        data = JSON.parse(decoded);
+                    } else {
+                        data = await response.json();
+                    }
+                    
+                    // VALIDIERUNG: Prüfe ob es eine gültige Tricks-Datenbank ist
+                    if (!data.trick_database) {
+                        throw new Error('Ungültige Datenstruktur: "trick_database" fehlt');
+                    }
+                    
+                    console.log(`✅ ERFOLG mit ${urlType}!`);
+                    console.log('📦 JSON erfolgreich geladen und validiert');
+                    console.log('📊 Kategorien gefunden:', Object.keys(data.trick_database));
+                    
+                    currentData = data;
+                    localStorage.setItem(FULL_DATA_KEY, JSON.stringify(data));
+                    
+                    mergeCustomTricks();
+                    renderApp(currentData);
+                    
+                    return; // Erfolg - beende Funktion
+                    
+                } catch(error) {
+                    console.warn(`⚠️ ${urlType} fehlgeschlagen:`, error.message);
+                    lastError = error;
+                    
+                    // Wenn GitHack, kurz warten (CDN braucht manchmal Zeit)
+                    if (url.includes('githack') && i < urls.length - 1) {
+                        console.log('⏳ Warte 1 Sekunde für GitHack CDN...');
+                        await new Promise(resolve => setTimeout(resolve, 1000));
+                    }
+                    
+                    // Fahre mit nächster URL fort
+                    continue;
                 }
-                
-                const data = await response.json();
-                console.log('📦 JSON empfangen, validiere Struktur...');
-                
-                // VALIDIERUNG: Prüfe ob es eine gültige Tricks-Datenbank ist
-                if (!data.trick_database) {
-                    throw new Error('Ungültige Datenstruktur: "trick_database" fehlt');
-                }
-                
-                console.log('✅ JSON erfolgreich geladen und validiert');
-                console.log('📊 Kategorien gefunden:', Object.keys(data.trick_database));
-                
-                currentData = data;
-                localStorage.setItem(FULL_DATA_KEY, JSON.stringify(data));
-                
-                mergeCustomTricks();
-                renderApp(currentData);
-                
-            } catch(error) {
-                console.error('❌ Fehler beim Laden:', error);
-                // Fehler weiterreichen, damit window.onload auf cached Daten zurückfallen kann
-                throw error;
             }
+            
+            // Alle Versuche fehlgeschlagen
+            console.error('❌ ALLE LADE-VERSUCHE FEHLGESCHLAGEN!');
+            console.error('Letzter Fehler:', lastError);
+            throw new Error(`Konnte JSON von keiner Quelle laden. Letzter Fehler: ${lastError?.message || 'Unbekannt'}`);
         }
         
         function showLoadError(errorMsg) {
@@ -2188,7 +2314,7 @@
                         
                         <div style="margin-bottom:20px; padding:16px; background:var(--bg-main); border-radius:8px;">
                             <p style="margin:0 0 8px 0; font-weight:600;">Methode 1: Download & Upload (Empfohlen)</p>
-                            <a href="https://raw.githubusercontent.com/Digid0t/DigiDot_9/main/Hundetricks.json" 
+                            <a href="https://raw.githack.com/Digid0t/DigiDot_9/main/Hundetricks.json" 
                                download="Hundetricks.json" 
                                style="display:inline-block; background:var(--gradient-success); color:white; padding:12px 24px; border-radius:8px; text-decoration:none; margin-top:8px; font-weight:600;">
                                 📥 Hundetricks.json herunterladen
